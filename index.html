@@ -106,6 +106,12 @@
     display: none;
   }
   .board-tile:hover .tile-delete { display: block; }
+
+  /* na touch uređajima (mobitel/tablet) nema hovera — gumbi su uvijek vidljivi */
+  @media (hover: none) {
+    .board-tile .tile-delete { display: block; }
+    .card-actions { display: flex; }
+  }
   .board-tile.new {
     background: #e3e6ea;
     color: var(--text-muted);
@@ -417,6 +423,13 @@
     </div>
   </div>
   <div class="panel">
+    <h3>Podaci s weba</h3>
+    <p>Učitaj ploče iz fajla <b>podaci.json</b> objavljenog uz aplikaciju (GitHub). Zamjenjuje trenutne podatke na ovom uređaju.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="loadWebBtn">⟳ Učitaj podatke s weba</button>
+    </div>
+  </div>
+  <div class="panel">
     <h3>Automatski backup</h3>
     <p>Poveži backup fajl na disku — svaka promjena se automatski zapisuje u njega. Radi u Chrome i Edge browseru.</p>
     <p class="subtle" id="backupStatus" style="margin-top:8px;">Backup nije povezan.</p>
@@ -514,6 +527,23 @@ const defaultData = {
 let data = load();
 let currentBoardId = null;
 let calYear, calMonth; // stanje kalendara
+
+// Ako je ovo prvi posjet (nema spremljenih podataka), pokušaj učitati podaci.json s weba
+(async function loadSeedData() {
+  if (localStorage.getItem(STORAGE_KEY)) return; // već ima podataka, ne diraj
+  try {
+    const resp = await fetch("podaci.json", { cache: "no-store" });
+    if (!resp.ok) return;
+    const seed = await resp.json();
+    if (!seed.boards) return;
+    seed.reminders ||= [];
+    data = seed;
+    save();
+    updateNavUser();
+    showView("ploce");
+    console.log("Učitani početni podaci s weba (podaci.json)");
+  } catch (e) { /* nema podaci.json ili smo offline — nastavi normalno */ }
+})();
 
 function load() {
   try {
@@ -1112,6 +1142,24 @@ document.getElementById("adminSave").addEventListener("click", () => {
 
 document.getElementById("backupConnect").addEventListener("click", connectBackup);
 document.getElementById("backupDisconnect").addEventListener("click", disconnectBackup);
+
+document.getElementById("loadWebBtn").addEventListener("click", async () => {
+  if (!confirm("Učitati podatke s weba? Ovo ZAMJENJUJE sve trenutne podatke na ovom uređaju.")) return;
+  try {
+    const resp = await fetch("podaci.json", { cache: "no-store" });
+    if (!resp.ok) throw new Error("nema fajla");
+    const seed = await resp.json();
+    if (!seed.boards) throw new Error("neispravan format");
+    seed.reminders ||= [];
+    data = seed;
+    save();
+    updateNavUser();
+    alert("Podaci učitani s weba ✓");
+    showView("ploce");
+  } catch (e) {
+    alert("Ne mogu učitati podaci.json — provjeri da je fajl objavljen uz aplikaciju i da imaš internet.\n(Napomena: ne radi kad je aplikacija otvorena lokalno kao file://)");
+  }
+});
 
 document.getElementById("exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });

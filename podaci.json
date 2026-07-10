@@ -1,0 +1,33 @@
+{
+  "user": { "name": "Josip Miletic", "initials": "JM" },
+  "reminders": [],
+  "boards": [
+    {
+      "id": "board001",
+      "title": "Geotehnički Fakultet",
+      "lists": [
+        { "id": "gf-l1", "title": "Za napraviti", "cards": [] },
+        { "id": "gf-l2", "title": "U tijeku", "cards": [] },
+        { "id": "gf-l3", "title": "Gotovo", "cards": [] }
+      ]
+    },
+    {
+      "id": "board002",
+      "title": "RGNF",
+      "lists": [
+        { "id": "rg-l1", "title": "Za napraviti", "cards": [] },
+        { "id": "rg-l2", "title": "U tijeku", "cards": [] },
+        { "id": "rg-l3", "title": "Gotovo", "cards": [] }
+      ]
+    },
+    {
+      "id": "board003",
+      "title": "Studentski centar ZG",
+      "lists": [
+        { "id": "sc-l1", "title": "Za napraviti", "cards": [] },
+        { "id": "sc-l2", "title": "U tijeku", "cards": [] },
+        { "id": "sc-l3", "title": "Gotovo", "cards": [] }
+      ]
+    }
+  ]
+}
