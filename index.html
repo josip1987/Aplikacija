@@ -496,23 +496,16 @@ const STORAGE_KEY = "tarelloApp";
 function id() { return Math.random().toString(36).slice(2, 10); }
 
 const defaultData = {
-  user: { name: "Moje Ime", initials: "MI" },
+  user: { name: "", initials: "" },
   reminders: [],
   boards: [
     {
       id: id(),
-      title: "Cloud and IT Systems Management Department",
+      title: "Moja prva ploča",
       lists: [
-        { id: id(), title: "Za napraviti", cards: [
-          { id: id(), title: "ažurirati lx produkciju", label: null, members: ["FB"], due: null, done: false },
-          { id: id(), title: "presales edukacija za nove kolege", label: "#f2d600", members: ["MI"], due: null, done: false }
-        ]},
-        { id: id(), title: "U tijeku", cards: [
-          { id: id(), title: "Hyper-V to Cloud replication", label: "#61bd4f", members: ["MI","RK"], due: null, done: false }
-        ]},
-        { id: id(), title: "Gotovo", cards: [
-          { id: id(), title: "servis klime", label: null, members: ["FB"], due: null, done: true }
-        ]}
+        { id: id(), title: "Za napraviti", cards: [] },
+        { id: id(), title: "U tijeku", cards: [] },
+        { id: id(), title: "Gotovo", cards: [] }
       ]
     }
   ]
