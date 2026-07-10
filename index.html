@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarello</title>
+<style>
+  :root {
+    --brand: #0d7377;
+    --brand-dark: #0a5c5f;
+    --bg: #f0f2f5;
+    --card-bg: #ffffff;
+    --text: #172b4d;
+    --text-muted: #6b778c;
+    --border: #dfe1e6;
+    --green: #61bd4f;
+    --yellow: #f2d600;
+    --red: #eb5a46;
+    --blue: #0079bf;
+    --purple: #c377e0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ---------- Navbar ---------- */
+  nav {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 54px;
+  }
+  .logo-badge {
+    background: var(--brand);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border-radius: 4px;
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brand);
+    margin: 0 18px 0 10px;
+  }
+  .nav-link {
+    border: none; background: none; cursor: pointer;
+    font-size: 15px; font-weight: 600;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+  }
+  .nav-link:hover { background: var(--bg); }
+  .nav-link.active { color: var(--brand); }
+  .nav-spacer { flex: 1; }
+  .nav-user {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-user .avatar { width: 30px; height: 30px; font-size: 12px; }
+
+  /* ---------- Views ---------- */
+  .view { display: none; padding: 20px; }
+  .view.active { display: block; }
+  .view h2 { font-size: 22px; margin-bottom: 16px; }
+  .subtle { color: var(--text-muted); font-size: 14px; }
+
+  /* ---------- Ploče (board grid) ---------- */
+  .board-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+    margin-top: 10px;
+  }
+  .board-tile {
+    background: linear-gradient(135deg, var(--brand), #14a0a5);
+    color: #fff;
+    border-radius: 10px;
+    padding: 18px 16px;
+    min-height: 100px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  .board-tile:hover { filter: brightness(1.08); }
+  .board-tile .tile-meta { font-size: 12px; font-weight: 400; opacity: 0.9; }
+  .board-tile .tile-delete {
+    position: absolute; top: 8px; right: 8px;
+    border: none; background: rgba(255,255,255,0.2); color: #fff;
+    border-radius: 4px; cursor: pointer; padding: 2px 7px;
+    display: none;
+  }
+  .board-tile:hover .tile-delete { display: block; }
+  .board-tile.new {
+    background: #e3e6ea;
+    color: var(--text-muted);
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    border: 2px dashed #c5cad1;
+  }
+  .board-tile.new:hover { background: #dadee3; }
+
+  /* ---------- Kanban board ---------- */
+  .board-header-row {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+  }
+  .back-btn {
+    border: none; background: #e3e6ea; cursor: pointer;
+    padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 600;
+  }
+  .back-btn:hover { background: #d8dce2; }
+  #boardTitle {
+    font-size: 22px; font-weight: 700;
+    border: none; background: transparent; color: var(--text);
+    outline: none; min-width: 200px; max-width: 55vw;
+  }
+  #boardTitle:focus { background: #fff; border-radius: 4px; box-shadow: 0 0 0 2px var(--brand); }
+
+  .board {
+    display: flex; gap: 14px;
+    overflow-x: auto; align-items: flex-start;
+    padding-bottom: 30px;
+    min-height: calc(100vh - 190px);
+  }
+  .list {
+    background: #e9ecf0; border-radius: 10px;
+    width: 290px; min-width: 290px;
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .list-header { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px; }
+  .list-title {
+    font-weight: 700; font-size: 14px;
+    border: none; background: transparent; outline: none;
+    color: var(--text); width: 70%;
+  }
+  .list-title:focus { background: #fff; border-radius: 4px; }
+  .list-meta { display: flex; align-items: center; gap: 8px; }
+  .card-count { color: var(--text-muted); font-size: 13px; }
+  .delete-list {
+    border: none; background: none; cursor: pointer;
+    color: var(--text-muted); font-size: 16px; line-height: 1;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .delete-list:hover { background: #d8dce2; color: var(--red); }
+  .cards { display: flex; flex-direction: column; gap: 8px; min-height: 30px; flex: 1; }
+  .list.drag-over { outline: 2px dashed var(--brand); outline-offset: 2px; background: #e0f0f0; }
+
+  .card {
+    background: var(--card-bg); border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 2px rgba(9,30,66,0.15);
+    cursor: grab; position: relative;
+  }
+  .card:hover { box-shadow: 0 2px 6px rgba(9,30,66,0.25); }
+  .card.dragging { opacity: 0.5; }
+  .card .label { display: inline-block; width: 42px; height: 8px; border-radius: 4px; margin-bottom: 6px; }
+  .card .title { font-size: 14px; line-height: 1.35; word-wrap: break-word; }
+  .card.done .title { text-decoration: line-through; color: var(--green); }
+  .card.done .title::before { content: "✓ "; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .due-badge {
+    font-size: 11px; color: var(--text-muted);
+    background: #f0f2f5; border-radius: 4px; padding: 2px 6px;
+  }
+  .due-badge.overdue { background: #ffe3e0; color: var(--red); font-weight: 600; }
+  .avatars { display: flex; gap: 4px; margin-left: auto; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--brand); color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    text-transform: uppercase;
+  }
+  .card-actions { position: absolute; top: 6px; right: 6px; display: none; gap: 4px; }
+  .card:hover .card-actions { display: flex; }
+  .card-actions button {
+    border: none; background: #f0f2f5; cursor: pointer;
+    border-radius: 4px; padding: 2px 6px; font-size: 12px;
+  }
+  .card-actions button:hover { background: #dfe1e6; }
+
+  .add-card-btn, .add-list-btn {
+    border: none; background: transparent;
+    color: var(--text-muted); text-align: left; cursor: pointer;
+    padding: 8px; border-radius: 6px; font-size: 14px;
+  }
+  .add-card-btn:hover { background: #d8dce2; color: var(--text); }
+  .add-list-btn {
+    background: #e9ecf0aa; width: 290px; min-width: 290px;
+    padding: 14px; font-weight: 600;
+  }
+  .add-list-btn:hover { background: #e9ecf0; }
+
+  /* ---------- Moji zadaci ---------- */
+  .task-filter { display: flex; gap: 8px; margin: 12px 0; }
+  .task-filter button {
+    border: 1px solid var(--border); background: #fff; cursor: pointer;
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+  }
+  .task-filter button.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+  }
+  .task-row {
+    background: #fff; border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 2px rgba(9,30,66,0.1);
+    cursor: pointer;
+  }
+  .task-row:hover { box-shadow: 0 2px 6px rgba(9,30,66,0.2); }
+  .task-row .label-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .task-row .task-title { flex: 1; font-size: 14px; }
+  .task-row.done .task-title { text-decoration: line-through; color: var(--green); }
+  .task-row .task-where { font-size: 12px; color: var(--text-muted); }
+
+  /* ---------- Kalendar ---------- */
+  .cal-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .cal-header button {
+    border: none; background: #e3e6ea; cursor: pointer;
+    padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 700;
+  }
+  .cal-header button:hover { background: #d8dce2; }
+  .cal-month { font-size: 18px; font-weight: 700; min-width: 180px; text-align: center; }
+  .calendar {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .cal-dayname { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; padding: 4px; }
+  .cal-cell {
+    background: #fff; border-radius: 8px;
+    min-height: 90px; padding: 6px;
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(9,30,66,0.08);
+  }
+  .cal-cell.other { opacity: 0.35; }
+  .cal-cell.today { outline: 2px solid var(--brand); }
+  .cal-date { font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+  .cal-event {
+    background: var(--brand); color: #fff;
+    border-radius: 4px; padding: 2px 5px; margin-bottom: 3px;
+    font-size: 11px; cursor: pointer;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cal-event.done { background: var(--green); text-decoration: line-through; }
+  .cal-event.reminder { background: #e58e26; }
+  .cal-cell:not(.other) { cursor: pointer; }
+  .cal-cell:not(.other):hover { background: #fbfcfd; box-shadow: 0 2px 6px rgba(9,30,66,0.18); }
+  .cal-cell:not(.other):hover .cal-date::after {
+    content: " + podsjetnik"; font-weight: 400; font-size: 10px; color: var(--brand);
+  }
+
+  /* ---------- Pomoć / Admin ---------- */
+  .panel {
+    background: #fff; border-radius: 10px;
+    padding: 20px; max-width: 640px;
+    box-shadow: 0 1px 3px rgba(9,30,66,0.12);
+    margin-bottom: 16px;
+  }
+  .panel h3 { font-size: 16px; margin-bottom: 10px; }
+  .panel p, .panel li { font-size: 14px; line-height: 1.6; color: var(--text); }
+  .panel ul { padding-left: 20px; }
+  .panel label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin: 12px 0 4px; }
+  .panel input[type="text"] {
+    width: 100%; max-width: 320px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; outline: none;
+  }
+  .panel input[type="text"]:focus { border-color: var(--brand); }
+  .btn {
+    border: none; border-radius: 6px; cursor: pointer;
+    padding: 8px 16px; font-size: 14px; font-weight: 600;
+  }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-ghost { background: #f0f2f5; color: var(--text); }
+  .btn-ghost:hover { background: #dfe1e6; }
+  .btn-danger { background: #ffe3e0; color: var(--red); }
+  .btn-danger:hover { background: #ffd2cd; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 10px;
+    width: 440px; max-width: 92vw; padding: 22px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  }
+  .modal h3 { margin-bottom: 14px; font-size: 17px; }
+  .modal label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin: 12px 0 4px; }
+  .modal input[type="text"], .modal input[type="date"] {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; outline: none;
+  }
+  .modal input:focus { border-color: var(--brand); }
+  .label-picker { display: flex; gap: 8px; }
+  .label-option { width: 46px; height: 26px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; }
+  .label-option.selected { border-color: var(--text); }
+  .label-option[data-color="none"] { background: #f0f2f5; position: relative; }
+  .label-option[data-color="none"]::after {
+    content: "✕"; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 12px;
+  }
+  .done-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ============ NAVIGACIJA ============ -->
+<nav>
+  <span class="logo-badge">Moja<br>Firma</span>
+  <span class="logo-text">Tarello</span>
+  <button class="nav-link" data-view="ploce">Ploče</button>
+  <button class="nav-link" data-view="zadaci">Moji zadaci</button>
+  <button class="nav-link" data-view="kalendar">Kalendar</button>
+  <button class="nav-link" data-view="pomoc">Pomoć</button>
+  <button class="nav-link" data-view="admin">Admin</button>
+  <button class="nav-link" data-view="qr">QR kod</button>
+  <span class="nav-spacer"></span>
+  <span class="nav-user"><span class="avatar" id="navAvatar">?</span><span id="navName"></span></span>
+</nav>
+
+<!-- ============ PLOČE ============ -->
+<div class="view" id="view-ploce">
+  <h2>Ploče</h2>
+  <p class="subtle">Klikni na ploču da je otvoriš, ili napravi novu.</p>
+  <div class="board-grid" id="boardGrid"></div>
+</div>
+
+<!-- ============ KANBAN (otvorena ploča) ============ -->
+<div class="view" id="view-kanban">
+  <div class="board-header-row">
+    <button class="back-btn" id="backToBoards">← Ploče</button>
+    <input id="boardTitle" title="Klikni za promjenu naziva ploče">
+  </div>
+  <div class="board" id="board"></div>
+</div>
+
+<!-- ============ MOJI ZADACI ============ -->
+<div class="view" id="view-zadaci">
+  <h2>Moji zadaci</h2>
+  <p class="subtle" id="zadaciSubtle"></p>
+  <div class="task-filter">
+    <button id="filterAll">Svi zadaci</button>
+    <button id="filterMine">Samo moji</button>
+  </div>
+  <div id="taskList" style="max-width:720px;"></div>
+</div>
+
+<!-- ============ KALENDAR ============ -->
+<div class="view" id="view-kalendar">
+  <h2>Kalendar</h2>
+  <div class="cal-header">
+    <button id="calPrev">‹</button>
+    <span class="cal-month" id="calMonth"></span>
+    <button id="calNext">›</button>
+  </div>
+  <div class="calendar" id="calendar"></div>
+</div>
+
+<!-- ============ POMOĆ ============ -->
+<div class="view" id="view-pomoc">
+  <h2>Pomoć</h2>
+  <div class="panel">
+    <h3>Kako koristiti Tarello</h3>
+    <ul>
+      <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu.</li>
+      <li><b>Kartice</b> — klikni "+ Dodaj karticu" u listi. Klik na karticu otvara uređivanje (labela, članovi, rok, gotovo).</li>
+      <li><b>Drag & drop</b> — povuci karticu mišem u drugu listu.</li>
+      <li><b>Moji zadaci</b> — prikazuje sve kartice sa svih ploča. Prekidačem "Samo moji" filtriraj na kartice s tvojim inicijalima (postavi ih u Adminu).</li>
+      <li><b>Kalendar</b> — kartice kojima si dodao rok prikazuju se na datumu roka (teal boja).</li>
+      <li><b>Podsjetnici</b> — klikni na bilo koji dan u kalendaru da dodaš podsjetnik 🔔 (narančasto). Klik na postojeći podsjetnik ga uređuje ili briše.</li>
+      <li><b>Spremanje</b> — sve se automatski sprema u ovaj browser (localStorage). Za sigurnosnu kopiju koristi Export u Adminu.</li>
+      <li><b>Automatski backup</b> — u Adminu klikni "Poveži backup fajl" (Chrome/Edge): odabereš fajl na disku jednom, i svaka promjena se od tada automatski zapisuje u njega.</li>
+      <li><b>QR kod</b> — generiraj QR za javni link aplikacije i skeniraj mobitelom da je otvoriš na telefonu.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ ADMIN ============ -->
+<div class="view" id="view-admin">
+  <h2>Admin</h2>
+  <div class="panel">
+    <h3>Moj profil</h3>
+    <label for="adminName">Ime i prezime</label>
+    <input type="text" id="adminName" placeholder="npr. Josip Miletic">
+    <label for="adminInitials">Inicijali (2 slova — koriste se za "Moji zadaci")</label>
+    <input type="text" id="adminInitials" placeholder="npr. JM" maxlength="2">
+    <div class="btn-row">
+      <button class="btn btn-primary" id="adminSave">Spremi profil</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Automatski backup</h3>
+    <p>Poveži backup fajl na disku — svaka promjena se automatski zapisuje u njega. Radi u Chrome i Edge browseru.</p>
+    <p class="subtle" id="backupStatus" style="margin-top:8px;">Backup nije povezan.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="backupConnect">Poveži backup fajl</button>
+      <button class="btn btn-ghost" id="backupDisconnect">Odspoji</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Podaci</h3>
+    <p>Sigurnosna kopija svih ploča u JSON fajl, ili vraćanje iz kopije.</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="exportBtn">⬇ Export podataka</button>
+      <button class="btn btn-ghost" id="importBtn">⬆ Import podataka</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+      <button class="btn btn-danger" id="resetBtn">Obriši sve podatke</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ QR KOD ============ -->
+<div class="view" id="view-qr">
+  <h2>QR kod</h2>
+  <div class="panel" style="text-align:center;">
+    <h3 style="text-align:left;">Otvori aplikaciju na mobitelu</h3>
+    <p style="text-align:left;">Zalijepi javni link aplikacije (npr. GitHub Pages), generiraj QR i skeniraj kamerom mobitela.</p>
+    <label for="qrUrlInput" style="text-align:left;">Link</label>
+    <input type="text" id="qrUrlInput" placeholder="https://tvoje-ime.github.io/tarello/" style="max-width:100%;">
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn btn-primary" id="qrGenBtn">Generiraj QR kod</button>
+      <button class="btn btn-ghost" id="qrDlBtn" style="display:none;">⬇ Preuzmi PNG</button>
+    </div>
+    <p class="subtle" id="qrError" style="color:#eb5a46; display:none; margin-top:10px;"></p>
+    <div id="qrCodeBox" style="display:none; justify-content:center; margin-top:20px;">
+      <div id="qrcode" style="padding:14px; background:#fff; border:1px solid var(--border); border-radius:10px;"></div>
+    </div>
+    <p class="subtle" id="qrUrlPreview" style="word-break:break-all; margin-top:10px;"></p>
+  </div>
+</div>
+
+<!-- ============ MODAL (uređivanje kartice) ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Uredi karticu</h3>
+    <label for="cardTitleInput">Naziv</label>
+    <input type="text" id="cardTitleInput">
+    <label>Labela</label>
+    <div class="label-picker" id="labelPicker">
+      <div class="label-option" data-color="none" title="Bez labele"></div>
+      <div class="label-option" data-color="#61bd4f" style="background:#61bd4f"></div>
+      <div class="label-option" data-color="#f2d600" style="background:#f2d600"></div>
+      <div class="label-option" data-color="#eb5a46" style="background:#eb5a46"></div>
+      <div class="label-option" data-color="#0079bf" style="background:#0079bf"></div>
+      <div class="label-option" data-color="#c377e0" style="background:#c377e0"></div>
+    </div>
+    <label for="cardMembersInput">Članovi (inicijali, odvojeni zarezom — npr. JM, FB)</label>
+    <input type="text" id="cardMembersInput" placeholder="JM, FB">
+    <label for="cardDueInput">Rok (za kalendar)</label>
+    <input type="date" id="cardDueInput">
+    <div class="done-row">
+      <input type="checkbox" id="cardDoneInput">
+      <label for="cardDoneInput" style="margin:0; cursor:pointer;">Označi kao gotovo ✓</label>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn btn-ghost" id="modalCancel">Odustani</button>
+      <button class="btn btn-primary" id="modalSave">Spremi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   PODACI
+   ========================================================= */
+const STORAGE_KEY = "tarelloApp";
+
+function id() { return Math.random().toString(36).slice(2, 10); }
+
+const defaultData = {
+  user: { name: "Moje Ime", initials: "MI" },
+  reminders: [],
+  boards: [
+    {
+      id: id(),
+      title: "Cloud and IT Systems Management Department",
+      lists: [
+        { id: id(), title: "Za napraviti", cards: [
+          { id: id(), title: "ažurirati lx produkciju", label: null, members: ["FB"], due: null, done: false },
+          { id: id(), title: "presales edukacija za nove kolege", label: "#f2d600", members: ["MI"], due: null, done: false }
+        ]},
+        { id: id(), title: "U tijeku", cards: [
+          { id: id(), title: "Hyper-V to Cloud replication", label: "#61bd4f", members: ["MI","RK"], due: null, done: false }
+        ]},
+        { id: id(), title: "Gotovo", cards: [
+          { id: id(), title: "servis klime", label: null, members: ["FB"], due: null, done: true }
+        ]}
+      ]
+    }
+  ]
+};
+
+let data = load();
+let currentBoardId = null;
+let calYear, calMonth; // stanje kalendara
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      d.reminders ||= []; // za starije spremljene podatke bez podsjetnika
+      return d;
+    }
+  } catch (e) { console.error(e); }
+  return structuredClone(defaultData);
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  scheduleBackup(); // automatski backup na disk (ako je povezan)
+}
+
+/* =========================================================
+   AUTOMATSKI BACKUP NA DISK (Chrome/Edge)
+   - jednom odabereš fajl, svaka promjena se zapisuje u njega
+   - izbor fajla se pamti u IndexedDB pa preživi zatvaranje
+   ========================================================= */
+let backupHandle = null;
+let backupTimer = null;
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open("tarelloBackup", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("handles", "readwrite");
+    tx.objectStore("handles").put(val, key);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("handles", "readonly");
+    const rq = tx.objectStore("handles").get(key);
+    rq.onsuccess = () => res(rq.result || null);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function idbDelete(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("handles", "readwrite");
+    tx.objectStore("handles").delete(key);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+
+function setBackupStatus(text) {
+  const el = document.getElementById("backupStatus");
+  if (el) el.textContent = text;
+}
+
+// odgodi zapis 1,5s nakon zadnje promjene (da ne piše na svaki znak tipkanja)
+function scheduleBackup() {
+  if (!backupHandle) return;
+  clearTimeout(backupTimer);
+  backupTimer = setTimeout(writeBackup, 1500);
+}
+
+async function writeBackup() {
+  if (!backupHandle) return;
+  try {
+    const perm = await backupHandle.queryPermission({ mode: "readwrite" });
+    if (perm !== "granted") {
+      setBackupStatus("⚠ Backup povezan, ali čeka odobrenje — klikni 'Poveži backup fajl'.");
+      return;
+    }
+    const writable = await backupHandle.createWritable();
+    await writable.write(JSON.stringify(data, null, 2));
+    await writable.close();
+    setBackupStatus("✓ Backup aktivan: " + backupHandle.name + " (zadnji zapis: " + new Date().toLocaleTimeString("hr-HR") + ")");
+  } catch (e) {
+    console.error("Backup greška:", e);
+    setBackupStatus("⚠ Greška pri zapisu backupa — provjeri fajl.");
+  }
+}
+
+async function connectBackup() {
+  if (!window.showSaveFilePicker) {
+    alert("Automatski backup radi samo u Chrome ili Edge browseru.\nU ovom browseru koristi ručni Export.");
+    return;
+  }
+  try {
+    // ako već imamo zapamćen fajl, samo zatraži odobrenje ponovno
+    if (backupHandle) {
+      const perm = await backupHandle.requestPermission({ mode: "readwrite" });
+      if (perm === "granted") { await writeBackup(); return; }
+    }
+    const handle = await window.showSaveFilePicker({
+      suggestedName: "tarello-backup.json",
+      types: [{ description: "JSON backup", accept: { "application/json": [".json"] } }]
+    });
+    backupHandle = handle;
+    await idbSet("backupFile", handle);
+    await writeBackup();
+  } catch (e) {
+    if (e.name !== "AbortError") console.error(e);
+  }
+}
+
+async function disconnectBackup() {
+  backupHandle = null;
+  await idbDelete("backupFile");
+  setBackupStatus("Backup nije povezan.");
+}
+
+async function initBackup() {
+  if (!window.showSaveFilePicker) {
+    setBackupStatus("Automatski backup nije podržan u ovom browseru (koristi Chrome/Edge). Dostupan je ručni Export.");
+    return;
+  }
+  try {
+    const handle = await idbGet("backupFile");
+    if (handle) {
+      backupHandle = handle;
+      const perm = await handle.queryPermission({ mode: "readwrite" });
+      if (perm === "granted") {
+        setBackupStatus("✓ Backup aktivan: " + handle.name);
+      } else {
+        setBackupStatus("Backup fajl zapamćen (" + handle.name + ") — klikni 'Poveži backup fajl' da ga ponovno odobriš.");
+      }
+    }
+  } catch (e) { console.error(e); }
+}
+
+/* =========================================================
+   NAVIGACIJA IZMEĐU POGLEDA
+   ========================================================= */
+const views = ["ploce", "kanban", "zadaci", "kalendar", "pomoc", "admin", "qr"];
+
+function showView(name) {
+  views.forEach(v => document.getElementById("view-" + v).classList.toggle("active", v === name));
+  document.querySelectorAll(".nav-link").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.view === name || (name === "kanban" && btn.dataset.view === "ploce"));
+  });
+  if (name === "ploce") renderBoards();
+  if (name === "zadaci") renderTasks();
+  if (name === "kalendar") renderCalendar();
+  if (name === "admin") fillAdmin();
+  if (name === "qr") initQrView();
+}
+
+document.querySelectorAll(".nav-link").forEach(btn => {
+  btn.addEventListener("click", () => showView(btn.dataset.view));
+});
+
+/* =========================================================
+   PLOČE — pregled i upravljanje
+   ========================================================= */
+const boardGrid = document.getElementById("boardGrid");
+
+function renderBoards() {
+  boardGrid.innerHTML = "";
+  data.boards.forEach(b => {
+    const tile = document.createElement("div");
+    tile.className = "board-tile";
+    const cardTotal = b.lists.reduce((s, l) => s + l.cards.length, 0);
+    tile.innerHTML = `<span>${escapeHtml(b.title)}</span>
+      <span class="tile-meta">${b.lists.length} lista · ${cardTotal} kartica</span>`;
+    const del = document.createElement("button");
+    del.className = "tile-delete"; del.textContent = "✕"; del.title = "Obriši ploču";
+    del.addEventListener("click", e => {
+      e.stopPropagation();
+      if (confirm(`Obrisati ploču "${b.title}"?`)) {
+        data.boards = data.boards.filter(x => x.id !== b.id);
+        save(); renderBoards();
+      }
+    });
+    tile.appendChild(del);
+    tile.addEventListener("click", () => openBoard(b.id));
+    boardGrid.appendChild(tile);
+  });
+
+  const newTile = document.createElement("div");
+  newTile.className = "board-tile new";
+  newTile.textContent = "+ Nova ploča";
+  newTile.addEventListener("click", () => {
+    const title = prompt("Naziv nove ploče:");
+    if (title && title.trim()) {
+      data.boards.push({ id: id(), title: title.trim(), lists: [
+        { id: id(), title: "Za napraviti", cards: [] },
+        { id: id(), title: "U tijeku", cards: [] },
+        { id: id(), title: "Gotovo", cards: [] }
+      ]});
+      save(); renderBoards();
+    }
+  });
+  boardGrid.appendChild(newTile);
+}
+
+function openBoard(boardId) {
+  currentBoardId = boardId;
+  showView("kanban");
+  renderKanban();
+}
+document.getElementById("backToBoards").addEventListener("click", () => showView("ploce"));
+
+function currentBoard() { return data.boards.find(b => b.id === currentBoardId); }
+
+/* =========================================================
+   KANBAN
+   ========================================================= */
+const boardEl = document.getElementById("board");
+const boardTitleEl = document.getElementById("boardTitle");
+
+boardTitleEl.addEventListener("input", () => {
+  const b = currentBoard(); if (!b) return;
+  b.title = boardTitleEl.value; save();
+});
+
+function renderKanban() {
+  const b = currentBoard(); if (!b) return;
+  boardTitleEl.value = b.title;
+  boardEl.innerHTML = "";
+
+  b.lists.forEach(list => {
+    const listEl = document.createElement("div");
+    listEl.className = "list";
+    listEl.dataset.listId = list.id;
+
+    // cijela lista je drop zona (ne samo prostor s karticama)
+    listEl.addEventListener("dragover", e => {
+      e.preventDefault();
+      listEl.classList.add("drag-over");
+    });
+    listEl.addEventListener("dragleave", e => {
+      if (!listEl.contains(e.relatedTarget)) listEl.classList.remove("drag-over");
+    });
+    listEl.addEventListener("drop", onDrop);
+
+    const header = document.createElement("div");
+    header.className = "list-header";
+    const titleInput = document.createElement("input");
+    titleInput.className = "list-title";
+    titleInput.value = list.title;
+    titleInput.addEventListener("input", () => { list.title = titleInput.value; save(); });
+
+    const meta = document.createElement("div");
+    meta.className = "list-meta";
+    const count = document.createElement("span");
+    count.className = "card-count";
+    count.textContent = list.cards.length;
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-list"; delBtn.textContent = "✕"; delBtn.title = "Obriši listu";
+    delBtn.addEventListener("click", () => {
+      if (confirm(`Obrisati listu "${list.title}" i sve kartice?`)) {
+        b.lists = b.lists.filter(l => l.id !== list.id);
+        save(); renderKanban();
+      }
+    });
+    meta.append(count, delBtn);
+    header.append(titleInput, meta);
+
+    const cardsEl = document.createElement("div");
+    cardsEl.className = "cards";
+    cardsEl.dataset.listId = list.id;
+
+    list.cards.forEach(card => cardsEl.appendChild(renderCard(card, list, b)));
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "add-card-btn";
+    addBtn.textContent = "+ Dodaj karticu";
+    addBtn.addEventListener("click", () => {
+      const title = prompt("Naziv kartice:");
+      if (title && title.trim()) {
+        list.cards.push({ id: id(), title: title.trim(), label: null, members: [], due: null, done: false });
+        save(); renderKanban();
+      }
+    });
+
+    listEl.append(header, cardsEl, addBtn);
+    boardEl.appendChild(listEl);
+  });
+
+  const addListBtn = document.createElement("button");
+  addListBtn.className = "add-list-btn";
+  addListBtn.textContent = "+ Dodaj listu";
+  addListBtn.addEventListener("click", () => {
+    const title = prompt("Naziv liste:");
+    if (title && title.trim()) {
+      b.lists.push({ id: id(), title: title.trim(), cards: [] });
+      save(); renderKanban();
+    }
+  });
+  boardEl.appendChild(addListBtn);
+}
+
+function renderCard(card, list, board) {
+  const el = document.createElement("div");
+  el.className = "card" + (card.done ? " done" : "");
+  el.draggable = true;
+
+  if (card.label) {
+    const label = document.createElement("span");
+    label.className = "label";
+    label.style.background = card.label;
+    el.appendChild(label);
+  }
+
+  const title = document.createElement("div");
+  title.className = "title";
+  title.textContent = card.title;
+  el.appendChild(title);
+
+  if (card.members.length || card.due) {
+    const footer = document.createElement("div");
+    footer.className = "card-footer";
+    if (card.due) {
+      const badge = document.createElement("span");
+      badge.className = "due-badge";
+      const dueDate = new Date(card.due + "T23:59");
+      if (!card.done && dueDate < new Date()) badge.classList.add("overdue");
+      badge.textContent = "📅 " + formatDate(card.due);
+      footer.appendChild(badge);
+    }
+    if (card.members.length) {
+      const avs = document.createElement("span");
+      avs.className = "avatars";
+      card.members.forEach(m => {
+        const av = document.createElement("span");
+        av.className = "avatar"; av.textContent = m;
+        avs.appendChild(av);
+      });
+      footer.appendChild(avs);
+    }
+    el.appendChild(footer);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+  const editBtn = document.createElement("button");
+  editBtn.textContent = "✎"; editBtn.title = "Uredi";
+  editBtn.addEventListener("click", e => { e.stopPropagation(); openModal(card); });
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "🗑"; delBtn.title = "Obriši";
+  delBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    if (confirm(`Obrisati karticu "${card.title}"?`)) {
+      list.cards = list.cards.filter(c => c.id !== card.id);
+      save(); renderKanban();
+    }
+  });
+  actions.append(editBtn, delBtn);
+  el.appendChild(actions);
+
+  el.addEventListener("click", () => openModal(card));
+  el.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text/plain", card.id);
+    el.classList.add("dragging");
+  });
+  el.addEventListener("dragend", () => el.classList.remove("dragging"));
+
+  return el;
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const listEl = e.currentTarget;
+  listEl.classList.remove("drag-over");
+
+  const b = currentBoard(); if (!b) return;
+  const cardId = e.dataTransfer.getData("text/plain");
+  const targetListId = listEl.dataset.listId;
+
+  // izvadi karticu iz stare liste
+  let moved = null;
+  for (const list of b.lists) {
+    const idx = list.cards.findIndex(c => c.id === cardId);
+    if (idx !== -1) { moved = list.cards.splice(idx, 1)[0]; break; }
+  }
+  if (!moved) return;
+
+  const targetList = b.lists.find(l => l.id === targetListId);
+
+  // izračunaj TOČNU poziciju prema visini miša (iznad/ispod svake kartice)
+  const cardEls = [...listEl.querySelectorAll(".card:not(.dragging)")];
+  let insertIndex = targetList.cards.length; // zadano: na kraj
+  for (let i = 0; i < cardEls.length; i++) {
+    const rect = cardEls[i].getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) { insertIndex = i; break; }
+  }
+
+  targetList.cards.splice(insertIndex, 0, moved);
+  save(); renderKanban();
+}
+
+/* =========================================================
+   MOJI ZADACI
+   ========================================================= */
+let taskFilter = "all"; // "all" = svi zadaci, "mine" = samo moji
+
+document.getElementById("filterAll").addEventListener("click", () => {
+  taskFilter = "all"; renderTasks();
+});
+document.getElementById("filterMine").addEventListener("click", () => {
+  taskFilter = "mine"; renderTasks();
+});
+
+function renderTasks() {
+  const my = (data.user.initials || "").toUpperCase();
+
+  document.getElementById("filterAll").classList.toggle("active", taskFilter === "all");
+  document.getElementById("filterMine").classList.toggle("active", taskFilter === "mine");
+
+  document.getElementById("zadaciSubtle").textContent =
+    taskFilter === "mine"
+      ? (my ? `Kartice na kojima su inicijali "${my}" (promijeni u Adminu).`
+            : "Postavi svoje inicijale u Adminu da vidiš svoje zadatke.")
+      : "Sve kartice sa svih ploča.";
+
+  const container = document.getElementById("taskList");
+  container.innerHTML = "";
+  let found = 0;
+
+  data.boards.forEach(b => {
+    b.lists.forEach(l => {
+      l.cards.forEach(c => {
+        const isMine = c.members.map(m => m.toUpperCase()).includes(my);
+        if (taskFilter === "mine" && !isMine) return;
+        found++;
+        const row = document.createElement("div");
+        row.className = "task-row" + (c.done ? " done" : "");
+        const dot = document.createElement("span");
+        dot.className = "label-dot";
+        dot.style.background = c.label || "#dfe1e6";
+        const t = document.createElement("span");
+        t.className = "task-title"; t.textContent = c.title;
+        const where = document.createElement("span");
+        where.className = "task-where";
+        where.textContent = `${b.title} → ${l.title}`
+          + (c.members.length ? ` · ${c.members.join(", ")}` : "")
+          + (c.due ? ` · 📅 ${formatDate(c.due)}` : "");
+        row.append(dot, t, where);
+        row.addEventListener("click", () => { openBoard(b.id); });
+        container.appendChild(row);
+      });
+    });
+  });
+
+  if (!found) {
+    const p = document.createElement("p");
+    p.className = "subtle";
+    p.style.marginTop = "14px";
+    p.textContent = taskFilter === "mine"
+      ? "Nema zadataka s tvojim inicijalima. Dodaj svoje inicijale na karticu (Uredi → Članovi)."
+      : "Nema kartica. Otvori ploču i dodaj prvu karticu.";
+    container.appendChild(p);
+  }
+}
+
+/* =========================================================
+   KALENDAR
+   ========================================================= */
+const MONTHS = ["Siječanj","Veljača","Ožujak","Travanj","Svibanj","Lipanj","Srpanj","Kolovoz","Rujan","Listopad","Studeni","Prosinac"];
+const DAYS = ["Pon","Uto","Sri","Čet","Pet","Sub","Ned"];
+
+document.getElementById("calPrev").addEventListener("click", () => { shiftMonth(-1); });
+document.getElementById("calNext").addEventListener("click", () => { shiftMonth(1); });
+
+function shiftMonth(d) {
+  calMonth += d;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar(true);
+}
+
+function renderCalendar(keep) {
+  if (!keep) {
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+  }
+  document.getElementById("calMonth").textContent = `${MONTHS[calMonth]} ${calYear}.`;
+
+  // skupi sve kartice s rokom
+  const events = {};
+  data.boards.forEach(b => b.lists.forEach(l => l.cards.forEach(c => {
+    if (c.due) (events[c.due] ||= []).push({ card: c, board: b });
+  })));
+
+  // skupi podsjetnike po datumu
+  const remindersByDate = {};
+  data.reminders.forEach(r => (remindersByDate[r.date] ||= []).push(r));
+
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+  DAYS.forEach(d => {
+    const dn = document.createElement("div");
+    dn.className = "cal-dayname"; dn.textContent = d;
+    cal.appendChild(dn);
+  });
+
+  const first = new Date(calYear, calMonth, 1);
+  let startOffset = (first.getDay() + 6) % 7; // ponedjeljak = 0
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const todayStr = toDateStr(new Date());
+
+  // dani prethodnog mjeseca
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for (let i = startOffset - 1; i >= 0; i--) {
+    cal.appendChild(makeCell(prevDays - i, null, true));
+  }
+  // dani ovog mjeseca
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = toDateStr(new Date(calYear, calMonth, d));
+    cal.appendChild(makeCell(d, events[dateStr], false, dateStr === todayStr, dateStr));
+  }
+
+  function makeCell(dayNum, evts, other, isToday, dateStr) {
+    const cell = document.createElement("div");
+    cell.className = "cal-cell" + (other ? " other" : "") + (isToday ? " today" : "");
+    const date = document.createElement("div");
+    date.className = "cal-date"; date.textContent = dayNum;
+    cell.appendChild(date);
+
+    // kartice s rokom (teal)
+    (evts || []).forEach(ev => {
+      const e = document.createElement("div");
+      e.className = "cal-event" + (ev.card.done ? " done" : "");
+      e.textContent = ev.card.title;
+      e.title = `${ev.card.title} (${ev.board.title})`;
+      e.addEventListener("click", evt => { evt.stopPropagation(); openBoard(ev.board.id); });
+      cell.appendChild(e);
+    });
+
+    // podsjetnici (narančasto) — klik = uredi ili obriši
+    if (dateStr) {
+      (remindersByDate[dateStr] || []).forEach(r => {
+        const e = document.createElement("div");
+        e.className = "cal-event reminder";
+        e.textContent = "🔔 " + r.text;
+        e.title = "Klikni za uređivanje ili brisanje";
+        e.addEventListener("click", evt => {
+          evt.stopPropagation();
+          const novi = prompt("Uredi podsjetnik (obriši sav tekst pa Spremi za brisanje):", r.text);
+          if (novi === null) return; // odustao
+          if (novi.trim() === "") {
+            if (confirm("Obrisati ovaj podsjetnik?")) {
+              data.reminders = data.reminders.filter(x => x.id !== r.id);
+              save(); renderCalendar(true);
+            }
+          } else {
+            r.text = novi.trim();
+            save(); renderCalendar(true);
+          }
+        });
+        cell.appendChild(e);
+      });
+
+      // klik na prazan dio dana = novi podsjetnik
+      cell.addEventListener("click", () => {
+        const text = prompt(`Novi podsjetnik za ${formatDate(dateStr)}:`);
+        if (text && text.trim()) {
+          data.reminders.push({ id: id(), date: dateStr, text: text.trim() });
+          save(); renderCalendar(true);
+        }
+      });
+    }
+    return cell;
+  }
+}
+
+function toDateStr(d) {
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function formatDate(iso) {
+  const [y, m, d] = iso.split("-");
+  return `${parseInt(d)}.${parseInt(m)}.${y}.`;
+}
+
+/* =========================================================
+   ADMIN
+   ========================================================= */
+function fillAdmin() {
+  document.getElementById("adminName").value = data.user.name || "";
+  document.getElementById("adminInitials").value = data.user.initials || "";
+}
+document.getElementById("adminSave").addEventListener("click", () => {
+  data.user.name = document.getElementById("adminName").value.trim();
+  data.user.initials = document.getElementById("adminInitials").value.trim().toUpperCase();
+  save(); updateNavUser();
+  alert("Profil spremljen ✓");
+});
+
+document.getElementById("backupConnect").addEventListener("click", connectBackup);
+document.getElementById("backupDisconnect").addEventListener("click", disconnectBackup);
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tarello-backup.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (!imported.boards) throw new Error("Neispravan format");
+      data = imported;
+      save(); updateNavUser();
+      alert("Podaci uvezeni ✓");
+      showView("ploce");
+    } catch (err) {
+      alert("Greška: fajl nije valjan Tarello backup.");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Sigurno obrisati SVE podatke? Ovo se ne može poništiti (osim iz export kopije).")) {
+    data = structuredClone(defaultData);
+    save(); updateNavUser();
+    showView("ploce");
+  }
+});
+
+function updateNavUser() {
+  document.getElementById("navName").textContent = data.user.name || "";
+  document.getElementById("navAvatar").textContent = (data.user.initials || "?").toUpperCase();
+}
+
+/* =========================================================
+   MODAL — uređivanje kartice
+   ========================================================= */
+const overlay = document.getElementById("modalOverlay");
+const titleInput = document.getElementById("cardTitleInput");
+const membersInput = document.getElementById("cardMembersInput");
+const dueInput = document.getElementById("cardDueInput");
+const doneInput = document.getElementById("cardDoneInput");
+const labelPicker = document.getElementById("labelPicker");
+let editingCard = null;
+let selectedLabel = null;
+
+labelPicker.addEventListener("click", e => {
+  const opt = e.target.closest(".label-option");
+  if (!opt) return;
+  labelPicker.querySelectorAll(".label-option").forEach(o => o.classList.remove("selected"));
+  opt.classList.add("selected");
+  selectedLabel = opt.dataset.color === "none" ? null : opt.dataset.color;
+});
+
+function openModal(card) {
+  editingCard = card;
+  titleInput.value = card.title;
+  membersInput.value = card.members.join(", ");
+  dueInput.value = card.due || "";
+  doneInput.checked = card.done;
+  selectedLabel = card.label;
+  labelPicker.querySelectorAll(".label-option").forEach(o => {
+    const c = o.dataset.color === "none" ? null : o.dataset.color;
+    o.classList.toggle("selected", c === card.label);
+  });
+  overlay.classList.add("open");
+  titleInput.focus();
+}
+
+function closeModal() { overlay.classList.remove("open"); editingCard = null; }
+
+document.getElementById("modalCancel").addEventListener("click", closeModal);
+overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+document.getElementById("modalSave").addEventListener("click", () => {
+  if (!editingCard) return;
+  editingCard.title = titleInput.value.trim() || editingCard.title;
+  editingCard.members = membersInput.value.split(",").map(m => m.trim()).filter(Boolean).map(m => m.slice(0, 2));
+  editingCard.due = dueInput.value || null;
+  editingCard.done = doneInput.checked;
+  editingCard.label = selectedLabel;
+  save(); renderKanban(); closeModal();
+});
+
+/* =========================================================
+   QR KOD
+   ========================================================= */
+let qrLibLoaded = false;
+
+function initQrView() {
+  const input = document.getElementById("qrUrlInput");
+  // ako je aplikacija već otvorena s javne adrese, sam popuni link
+  if (!input.value && /^https?:\/\//.test(location.href) && !/localhost|127\.0\.0\.1|192\.168\./.test(location.href)) {
+    input.value = location.href;
+  }
+  // učitaj QR biblioteku s interneta (samo prvi put)
+  if (!qrLibLoaded && !window.QRCode) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+    s.onload = () => { qrLibLoaded = true; };
+    s.onerror = () => qrShowError("Ne mogu učitati QR biblioteku — provjeri internet vezu.");
+    document.head.appendChild(s);
+  }
+}
+
+function qrShowError(msg) {
+  const err = document.getElementById("qrError");
+  err.textContent = msg;
+  err.style.display = "block";
+  document.getElementById("qrCodeBox").style.display = "none";
+  document.getElementById("qrDlBtn").style.display = "none";
+  document.getElementById("qrUrlPreview").textContent = "";
+}
+
+document.getElementById("qrGenBtn").addEventListener("click", generateQr);
+document.getElementById("qrUrlInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") generateQr();
+});
+
+function generateQr() {
+  document.getElementById("qrError").style.display = "none";
+  let url = document.getElementById("qrUrlInput").value.trim();
+
+  if (!url) { qrShowError("Upiši link."); return; }
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+
+  if (/^file:|localhost|127\.0\.0\.1|192\.168\./i.test(url)) {
+    qrShowError("⚠ Ovo je lokalna adresa — mobitel je neće moći otvoriti. Objavi aplikaciju (npr. GitHub Pages) i koristi javni link.");
+    return;
+  }
+  if (!window.QRCode) {
+    qrShowError("QR biblioteka se još učitava — pričekaj sekundu i probaj ponovo (treba internet).");
+    return;
+  }
+
+  const qrEl = document.getElementById("qrcode");
+  qrEl.innerHTML = "";
+  new QRCode(qrEl, {
+    text: url,
+    width: 220,
+    height: 220,
+    colorDark: "#0d7377",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById("qrCodeBox").style.display = "flex";
+  document.getElementById("qrUrlPreview").textContent = url;
+  document.getElementById("qrDlBtn").style.display = "inline-block";
+}
+
+document.getElementById("qrDlBtn").addEventListener("click", () => {
+  const qrEl = document.getElementById("qrcode");
+  const img = qrEl.querySelector("img");
+  const canvas = qrEl.querySelector("canvas");
+  const dataUrl = img ? img.src : (canvas ? canvas.toDataURL("image/png") : null);
+  if (!dataUrl) return;
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = "tarello-qr.png";
+  a.click();
+});
+
+/* =========================================================
+   POMOĆNE
+   ========================================================= */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+/* start */
+updateNavUser();
+initBackup();
+showView("ploce");
+</script>
+</body>
+</html>
