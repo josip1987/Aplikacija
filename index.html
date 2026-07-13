@@ -6,8 +6,8 @@
 <title>Tarello</title>
 <style>
   :root {
-    --brand: #0d7377;
-    --brand-dark: #0a5c5f;
+    --brand: #cda8a8;
+    --brand-dark: #b28989;
     --bg: #f0f2f5;
     --card-bg: #ffffff;
     --text: #172b4d;
@@ -84,7 +84,7 @@
     margin-top: 10px;
   }
   .board-tile {
-    background: linear-gradient(135deg, var(--brand), #14a0a5);
+    background: linear-gradient(135deg, var(--brand), #ddbcbc);
     color: #fff;
     border-radius: 10px;
     padding: 18px 16px;
@@ -98,7 +98,19 @@
     position: relative;
   }
   .board-tile:hover { filter: brightness(1.08); }
+  .board-tile.has-bg {
+    background-size: cover;
+    background-position: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  }
   .board-tile .tile-meta { font-size: 12px; font-weight: 400; opacity: 0.9; }
+  .board-tile .tile-bg-btn {
+    position: absolute; top: 8px; right: 36px;
+    border: none; background: rgba(255,255,255,0.2); color: #fff;
+    border-radius: 4px; cursor: pointer; padding: 2px 7px;
+    display: none;
+  }
+  .board-tile:hover .tile-bg-btn { display: block; }
   .board-tile .tile-delete {
     position: absolute; top: 8px; right: 8px;
     border: none; background: rgba(255,255,255,0.2); color: #fff;
@@ -110,6 +122,7 @@
   /* na touch uređajima (mobitel/tablet) nema hovera — gumbi su uvijek vidljivi */
   @media (hover: none) {
     .board-tile .tile-delete { display: block; }
+    .board-tile .tile-bg-btn { display: block; }
     .card-actions { display: flex; }
   }
   .board-tile.new {
@@ -166,7 +179,7 @@
   }
   .delete-list:hover { background: #d8dce2; color: var(--red); }
   .cards { display: flex; flex-direction: column; gap: 8px; min-height: 30px; flex: 1; }
-  .list.drag-over { outline: 2px dashed var(--brand); outline-offset: 2px; background: #e0f0f0; }
+  .list.drag-over { outline: 2px dashed var(--brand); outline-offset: 2px; background: #f3e9e9; }
 
   .card {
     background: var(--card-bg); border-radius: 8px;
@@ -334,6 +347,35 @@
   }
   .done-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
   .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  /* ---------- Undo toast ---------- */
+  .undo-toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #172b4d; color: #fff;
+    border-radius: 10px;
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    z-index: 200;
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    max-width: 92vw;
+  }
+  .undo-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .undo-toast button {
+    border: none; cursor: pointer;
+    background: var(--brand); color: #fff;
+    font-weight: 700; font-size: 14px;
+    padding: 7px 16px; border-radius: 6px;
+    white-space: nowrap;
+  }
+  .undo-toast button:hover { background: var(--brand-dark); }
 </style>
 </head>
 <body>
@@ -396,7 +438,7 @@
   <div class="panel">
     <h3>Kako koristiti Tarello</h3>
     <ul>
-      <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu.</li>
+      <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu. Ikonom 📷 na pločici postavi sliku kao pozadinu ploče (ponovni klik na 📷 je uklanja).</li>
       <li><b>Kartice</b> — klikni "+ Dodaj karticu" u listi. Klik na karticu otvara uređivanje (labela, članovi, rok, gotovo).</li>
       <li><b>Drag & drop</b> — povuci karticu mišem u drugu listu.</li>
       <li><b>Moji zadaci</b> — prikazuje sve kartice sa svih ploča. Prekidačem "Samo moji" filtriraj na kartice s tvojim inicijalima (postavi ih u Adminu).</li>
@@ -405,6 +447,8 @@
       <li><b>Spremanje</b> — sve se automatski sprema u ovaj browser (localStorage). Za sigurnosnu kopiju koristi Export u Adminu.</li>
       <li><b>Automatski backup</b> — u Adminu klikni "Poveži backup fajl" (Chrome/Edge): odabereš fajl na disku jednom, i svaka promjena se od tada automatski zapisuje u njega.</li>
       <li><b>QR kod</b> — generiraj QR za javni link aplikacije i skeniraj mobitelom da je otvoriš na telefonu.</li>
+      <li><b>Vraćanje obrisanog</b> — nakon brisanja se dolje na 8 sekundi pojavi gumb "↩ Vrati" za brzo vraćanje. Ako ga propustiš — sve obrisano čeka u <b>Admin → Smeće</b>, odakle ga možeš vratiti bilo kad (čuva se zadnjih 50 stavki).</li>
+      <li><b>Export u Excel/PDF</b> — u Adminu izvezi sve taskove u Excel tablicu ili PDF dokument (PDF: u dijalogu ispisa odaberi "Spremi kao PDF").</li>
     </ul>
   </div>
 </div>
@@ -420,6 +464,22 @@
     <input type="text" id="adminInitials" placeholder="npr. JM" maxlength="2">
     <div class="btn-row">
       <button class="btn btn-primary" id="adminSave">Spremi profil</button>
+    </div>
+  </div>
+  <div class="panel" style="max-width:900px;">
+    <h3>🗑 Smeće</h3>
+    <p>Sve obrisano (ploče, liste, kartice, podsjetnici) čuva se ovdje dok ga ne vratiš ili trajno obrišeš. Čuva se zadnjih 50 stavki.</p>
+    <div id="trashList" style="margin-top:12px;"></div>
+    <div class="btn-row">
+      <button class="btn btn-danger" id="emptyTrashBtn">Isprazni smeće (trajno)</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Export taskova</h3>
+    <p>Izvezi sve taskove u Excel tablicu ili PDF dokument za ispis/arhivu.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="excelBtn">📊 Export u Excel (.xlsx)</button>
+      <button class="btn btn-primary" id="pdfBtn">📄 Export u PDF</button>
     </div>
   </div>
   <div class="panel">
@@ -445,6 +505,7 @@
       <button class="btn btn-ghost" id="exportBtn">⬇ Export podataka</button>
       <button class="btn btn-ghost" id="importBtn">⬆ Import podataka</button>
       <input type="file" id="importFile" accept=".json" style="display:none">
+      <input type="file" id="bgImageFile" accept="image/*" style="display:none">
       <button class="btn btn-danger" id="resetBtn">Obriši sve podatke</button>
     </div>
   </div>
@@ -500,6 +561,147 @@
   </div>
 </div>
 
+<div class="undo-toast" id="undoToast">
+  <span id="undoText"></span>
+  <button id="undoBtn">↩ Vrati</button>
+</div>
+
+<script>
+/* =========================================================
+   UNDO — vraćanje obrisanog (ploča / lista / kartica / podsjetnik)
+   ========================================================= */
+let undoAction = null;
+let undoTimer = null;
+
+function showUndo(text, restoreFn) {
+  undoAction = restoreFn;
+  document.getElementById("undoText").textContent = text;
+  const toast = document.getElementById("undoToast");
+  toast.classList.add("show");
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 8000); // 8 sekundi za predomisliti se
+}
+
+function hideUndo() {
+  document.getElementById("undoToast").classList.remove("show");
+  undoAction = null;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("undoBtn").addEventListener("click", () => {
+    if (undoAction) undoAction();
+    hideUndo();
+  });
+});
+</script>
+
+<script>
+/* =========================================================
+   SMEĆE — obrisano se čuva dok ga ne vratiš ili trajno obrišeš
+   ========================================================= */
+function addToTrash(type, item, ctx) {
+  const entry = { id: id(), type, item, ctx, at: Date.now() };
+  data.trash.unshift(entry);
+  if (data.trash.length > 50) data.trash.length = 50; // čuvamo zadnjih 50
+  return entry.id;
+}
+
+function removeFromTrash(trashId) {
+  data.trash = data.trash.filter(t => t.id !== trashId);
+}
+
+const TRASH_LABELS = { board: "🗂 Ploča", list: "📋 Lista", card: "🃏 Kartica", reminder: "🔔 Podsjetnik" };
+
+function trashItemTitle(t) {
+  if (t.type === "reminder") return t.item.text;
+  return t.item.title;
+}
+
+function restoreFromTrash(trashId) {
+  const t = data.trash.find(x => x.id === trashId);
+  if (!t) return;
+
+  if (t.type === "board") {
+    data.boards.push(t.item);
+  } else if (t.type === "list") {
+    const board = data.boards.find(b => b.id === t.ctx.boardId);
+    if (board) {
+      board.lists.push(t.item);
+    } else {
+      // matična ploča više ne postoji — vrati listu kao novu ploču
+      data.boards.push({ id: id(), title: t.item.title + " (vraćeno)", lists: [t.item] });
+    }
+  } else if (t.type === "card") {
+    const board = data.boards.find(b => b.id === t.ctx.boardId);
+    if (!board) {
+      alert("Matična ploča više ne postoji. Ako je i ona u smeću, prvo vrati nju, pa onda karticu.");
+      return;
+    }
+    const list = board.lists.find(l => l.id === t.ctx.listId) || board.lists[0];
+    if (!list) { alert("Ploča nema nijednu listu — dodaj listu pa pokušaj ponovo."); return; }
+    list.cards.push(t.item);
+  } else if (t.type === "reminder") {
+    data.reminders.push(t.item);
+  }
+
+  removeFromTrash(trashId);
+  save();
+  renderTrash();
+  alert("Vraćeno ✓");
+}
+
+function renderTrash() {
+  const box = document.getElementById("trashList");
+  if (!box) return;
+  box.innerHTML = "";
+
+  if (!data.trash.length) {
+    box.innerHTML = `<p class="subtle">Smeće je prazno.</p>`;
+    return;
+  }
+
+  data.trash.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "task-row";
+    row.style.cursor = "default";
+
+    const label = document.createElement("span");
+    label.className = "task-where";
+    label.style.minWidth = "95px";
+    label.textContent = TRASH_LABELS[t.type] || t.type;
+
+    const title = document.createElement("span");
+    title.className = "task-title";
+    title.textContent = trashItemTitle(t);
+
+    const when = document.createElement("span");
+    when.className = "task-where";
+    when.textContent = new Date(t.at).toLocaleString("hr-HR");
+
+    const restoreBtn = document.createElement("button");
+    restoreBtn.className = "btn btn-primary";
+    restoreBtn.style.padding = "5px 12px";
+    restoreBtn.textContent = "↩ Vrati";
+    restoreBtn.addEventListener("click", () => restoreFromTrash(t.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn btn-danger";
+    delBtn.style.padding = "5px 12px";
+    delBtn.textContent = "✕";
+    delBtn.title = "Trajno obriši";
+    delBtn.addEventListener("click", () => {
+      if (confirm("Trajno obrisati iz smeća? Ovo se NE može vratiti.")) {
+        removeFromTrash(t.id);
+        save(); renderTrash();
+      }
+    });
+
+    row.append(label, title, when, restoreBtn, delBtn);
+    box.appendChild(row);
+  });
+}
+</script>
+
 <script>
 /* =========================================================
    PODACI
@@ -511,6 +713,7 @@ function id() { return Math.random().toString(36).slice(2, 10); }
 const defaultData = {
   user: { name: "", initials: "" },
   reminders: [],
+  trash: [],
   boards: [
     {
       id: id(),
@@ -551,6 +754,7 @@ function load() {
     if (raw) {
       const d = JSON.parse(raw);
       d.reminders ||= []; // za starije spremljene podatke bez podsjetnika
+      d.trash ||= [];     // za starije spremljene podatke bez smeća
       return d;
     }
   } catch (e) { console.error(e); }
@@ -711,17 +915,45 @@ function renderBoards() {
   boardGrid.innerHTML = "";
   data.boards.forEach(b => {
     const tile = document.createElement("div");
-    tile.className = "board-tile";
+    tile.className = "board-tile" + (b.bg ? " has-bg" : "");
+    if (b.bg) {
+      tile.style.backgroundImage =
+        `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${b.bg})`;
+    }
     const cardTotal = b.lists.reduce((s, l) => s + l.cards.length, 0);
     tile.innerHTML = `<span>${escapeHtml(b.title)}</span>
       <span class="tile-meta">${b.lists.length} lista · ${cardTotal} kartica</span>`;
+
+    // gumb za sliku pozadine 📷
+    const bgBtn = document.createElement("button");
+    bgBtn.className = "tile-bg-btn"; bgBtn.textContent = "📷";
+    bgBtn.title = b.bg ? "Promijeni ili ukloni sliku" : "Postavi sliku pozadine";
+    bgBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      if (b.bg && confirm("Ploča već ima sliku.\nOK = ukloni sliku\nOdustani = odaberi novu")) {
+        delete b.bg;
+        save(); renderBoards();
+        return;
+      }
+      bgTargetBoardId = b.id;
+      document.getElementById("bgImageFile").click();
+    });
+    tile.appendChild(bgBtn);
+
     const del = document.createElement("button");
     del.className = "tile-delete"; del.textContent = "✕"; del.title = "Obriši ploču";
     del.addEventListener("click", e => {
       e.stopPropagation();
       if (confirm(`Obrisati ploču "${b.title}"?`)) {
-        data.boards = data.boards.filter(x => x.id !== b.id);
+        const idx = data.boards.findIndex(x => x.id === b.id);
+        const backup = data.boards.splice(idx, 1)[0];
+        const tid = addToTrash("board", backup, {});
         save(); renderBoards();
+        showUndo(`Ploča "${backup.title}" obrisana.`, () => {
+          data.boards.splice(idx, 0, backup);
+          removeFromTrash(tid);
+          save(); renderBoards();
+        });
       }
     });
     tile.appendChild(del);
@@ -751,6 +983,45 @@ function openBoard(boardId) {
   showView("kanban");
   renderKanban();
 }
+
+/* ---------- slika pozadine ploče ---------- */
+let bgTargetBoardId = null;
+
+document.getElementById("bgImageFile").addEventListener("change", e => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file || !bgTargetBoardId) return;
+
+  const board = data.boards.find(b => b.id === bgTargetBoardId);
+  bgTargetBoardId = null;
+  if (!board) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      // smanji sliku na max 800px širine (štedi prostor, dovoljno za pločicu)
+      const MAX_W = 800;
+      const scale = Math.min(1, MAX_W / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      board.bg = canvas.toDataURL("image/jpeg", 0.75);
+      try {
+        save();
+      } catch (err) {
+        delete board.bg;
+        alert("Slika je prevelika za spremanje — probaj manju sliku.");
+        return;
+      }
+      renderBoards();
+    };
+    img.onerror = () => alert("Ne mogu pročitati sliku — probaj drugi format (JPG/PNG).");
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
 document.getElementById("backToBoards").addEventListener("click", () => showView("ploce"));
 
 function currentBoard() { return data.boards.find(b => b.id === currentBoardId); }
@@ -802,8 +1073,15 @@ function renderKanban() {
     delBtn.className = "delete-list"; delBtn.textContent = "✕"; delBtn.title = "Obriši listu";
     delBtn.addEventListener("click", () => {
       if (confirm(`Obrisati listu "${list.title}" i sve kartice?`)) {
-        b.lists = b.lists.filter(l => l.id !== list.id);
+        const idx = b.lists.findIndex(l => l.id === list.id);
+        const backup = b.lists.splice(idx, 1)[0];
+        const tid = addToTrash("list", backup, { boardId: b.id });
         save(); renderKanban();
+        showUndo(`Lista "${backup.title}" obrisana.`, () => {
+          b.lists.splice(idx, 0, backup);
+          removeFromTrash(tid);
+          save(); renderKanban();
+        });
       }
     });
     meta.append(count, delBtn);
@@ -894,8 +1172,15 @@ function renderCard(card, list, board) {
   delBtn.addEventListener("click", e => {
     e.stopPropagation();
     if (confirm(`Obrisati karticu "${card.title}"?`)) {
-      list.cards = list.cards.filter(c => c.id !== card.id);
+      const idx = list.cards.findIndex(c => c.id === card.id);
+      const backup = list.cards.splice(idx, 1)[0];
+      const tid = addToTrash("card", backup, { boardId: board.id, listId: list.id });
       save(); renderKanban();
+      showUndo(`Kartica "${backup.title}" obrisana.`, () => {
+        list.cards.splice(idx, 0, backup);
+        removeFromTrash(tid);
+        save(); renderKanban();
+      });
     }
   });
   actions.append(editBtn, delBtn);
@@ -1094,8 +1379,15 @@ function renderCalendar(keep) {
           if (novi === null) return; // odustao
           if (novi.trim() === "") {
             if (confirm("Obrisati ovaj podsjetnik?")) {
-              data.reminders = data.reminders.filter(x => x.id !== r.id);
+              const idx = data.reminders.findIndex(x => x.id === r.id);
+              const backup = data.reminders.splice(idx, 1)[0];
+              const tid = addToTrash("reminder", backup, {});
               save(); renderCalendar(true);
+              showUndo(`Podsjetnik obrisan.`, () => {
+                data.reminders.splice(idx, 0, backup);
+                removeFromTrash(tid);
+                save(); renderCalendar(true);
+              });
             }
           } else {
             r.text = novi.trim();
@@ -1132,7 +1424,16 @@ function formatDate(iso) {
 function fillAdmin() {
   document.getElementById("adminName").value = data.user.name || "";
   document.getElementById("adminInitials").value = data.user.initials || "";
+  renderTrash();
 }
+
+document.getElementById("emptyTrashBtn").addEventListener("click", () => {
+  if (!data.trash.length) { alert("Smeće je već prazno."); return; }
+  if (confirm(`Trajno obrisati svih ${data.trash.length} stavki iz smeća? Ovo se NE može vratiti.`)) {
+    data.trash = [];
+    save(); renderTrash();
+  }
+});
 document.getElementById("adminSave").addEventListener("click", () => {
   data.user.name = document.getElementById("adminName").value.trim();
   data.user.initials = document.getElementById("adminInitials").value.trim().toUpperCase();
@@ -1258,6 +1559,126 @@ document.getElementById("modalSave").addEventListener("click", () => {
 });
 
 /* =========================================================
+   EXPORT U EXCEL I PDF
+   ========================================================= */
+const LABEL_NAMES = {
+  "#61bd4f": "Zelena", "#f2d600": "Žuta", "#eb5a46": "Crvena",
+  "#0079bf": "Plava", "#c377e0": "Ljubičasta"
+};
+
+// skupi sve taskove u redove (za Excel i PDF)
+function collectRows() {
+  const rows = [];
+  data.boards.forEach(b => b.lists.forEach(l => l.cards.forEach(c => {
+    rows.push({
+      "Ploča": b.title,
+      "Lista": l.title,
+      "Zadatak": c.title,
+      "Članovi": c.members.join(", "),
+      "Rok": c.due ? formatDate(c.due) : "",
+      "Labela": c.label ? (LABEL_NAMES[c.label] || c.label) : "",
+      "Status": c.done ? "Gotovo ✓" : "Otvoreno"
+    });
+  })));
+  return rows;
+}
+
+/* ---------- EXCEL ---------- */
+document.getElementById("excelBtn").addEventListener("click", () => {
+  const rows = collectRows();
+  if (!rows.length) { alert("Nema taskova za export."); return; }
+
+  // učitaj SheetJS biblioteku s CDN-a (samo prvi put)
+  if (window.XLSX) { makeExcel(rows); return; }
+  const s = document.createElement("script");
+  s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  s.onload = () => makeExcel(rows);
+  s.onerror = () => alert("Ne mogu učitati Excel biblioteku — provjeri internet vezu.");
+  document.head.appendChild(s);
+});
+
+function makeExcel(rows) {
+  const wb = XLSX.utils.book_new();
+
+  // list 1: svi taskovi
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [ {wch:28}, {wch:16}, {wch:45}, {wch:14}, {wch:12}, {wch:11}, {wch:11} ];
+  XLSX.utils.book_append_sheet(wb, ws, "Taskovi");
+
+  // list 2: podsjetnici (ako postoje)
+  if (data.reminders.length) {
+    const remRows = data.reminders
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(r => ({ "Datum": formatDate(r.date), "Podsjetnik": r.text }));
+    const ws2 = XLSX.utils.json_to_sheet(remRows);
+    ws2["!cols"] = [ {wch:12}, {wch:60} ];
+    XLSX.utils.book_append_sheet(wb, ws2, "Podsjetnici");
+  }
+
+  const datum = toDateStr(new Date());
+  XLSX.writeFile(wb, `tarello-taskovi-${datum}.xlsx`);
+}
+
+/* ---------- PDF (preko ispisa — čuva hrvatska slova) ---------- */
+document.getElementById("pdfBtn").addEventListener("click", () => {
+  const rows = collectRows();
+  if (!rows.length && !data.reminders.length) { alert("Nema taskova za export."); return; }
+
+  let html = `<!DOCTYPE html><html lang="hr"><head><meta charset="UTF-8">
+  <title>Tarello — pregled taskova</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #172b4d; padding: 24px; }
+    h1 { font-size: 20px; color: #b28989; margin-bottom: 2px; }
+    .datum { color: #6b778c; font-size: 12px; margin-bottom: 18px; }
+    h2 { font-size: 15px; background: #cda8a8; color: #fff; padding: 6px 10px; border-radius: 6px; margin: 18px 0 8px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    th, td { border: 1px solid #dfe1e6; padding: 6px 8px; font-size: 12px; text-align: left; }
+    th { background: #f0f2f5; }
+    .done { color: #61bd4f; text-decoration: line-through; }
+    .empty { color: #6b778c; font-size: 12px; font-style: italic; }
+    @media print { body { padding: 0; } }
+  </style></head><body>
+  <h1>Tarello — pregled taskova</h1>
+  <div class="datum">Izvezeno: ${new Date().toLocaleDateString("hr-HR")} ${new Date().toLocaleTimeString("hr-HR")}</div>`;
+
+  data.boards.forEach(b => {
+    html += `<h2>${escapeHtml(b.title)}</h2>`;
+    const boardRows = [];
+    b.lists.forEach(l => l.cards.forEach(c => boardRows.push({ l, c })));
+    if (!boardRows.length) { html += `<p class="empty">Nema kartica.</p>`; return; }
+    html += `<table><tr><th>Lista</th><th>Zadatak</th><th>Članovi</th><th>Rok</th><th>Status</th></tr>`;
+    boardRows.forEach(({ l, c }) => {
+      html += `<tr>
+        <td>${escapeHtml(l.title)}</td>
+        <td class="${c.done ? "done" : ""}">${escapeHtml(c.title)}</td>
+        <td>${escapeHtml(c.members.join(", "))}</td>
+        <td>${c.due ? formatDate(c.due) : ""}</td>
+        <td>${c.done ? "Gotovo ✓" : "Otvoreno"}</td>
+      </tr>`;
+    });
+    html += `</table>`;
+  });
+
+  if (data.reminders.length) {
+    html += `<h2>Podsjetnici</h2><table><tr><th>Datum</th><th>Podsjetnik</th></tr>`;
+    data.reminders.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(r => {
+      html += `<tr><td>${formatDate(r.date)}</td><td>${escapeHtml(r.text)}</td></tr>`;
+    });
+    html += `</table>`;
+  }
+
+  html += `</body></html>`;
+
+  const w = window.open("", "_blank");
+  if (!w) { alert("Browser je blokirao prozor — dopusti pop-up za ovu stranicu."); return; }
+  w.document.write(html);
+  w.document.close();
+  // pričekaj da se sadržaj iscrta pa otvori dijalog za ispis/PDF
+  w.onload = () => setTimeout(() => w.print(), 300);
+});
+
+/* =========================================================
    QR KOD
    ========================================================= */
 let qrLibLoaded = false;
@@ -1314,7 +1735,7 @@ function generateQr() {
     text: url,
     width: 220,
     height: 220,
-    colorDark: "#0d7377",
+    colorDark: "#6e4f4f",
     colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.M
   });
