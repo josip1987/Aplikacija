@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#cda8a8">
+<link rel="icon" type="image/png" href="ikona-192.png">
+<link rel="apple-touch-icon" href="ikona-192.png">
 <title>Tarello</title>
 <style>
   :root {
@@ -192,7 +196,6 @@
   .card .label { display: inline-block; width: 42px; height: 8px; border-radius: 4px; margin-bottom: 6px; }
   .card .title { font-size: 14px; line-height: 1.35; word-wrap: break-word; }
   .card.done .title { text-decoration: line-through; color: var(--green); }
-  .card.done .title::before { content: "✓ "; }
   .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
   .due-badge {
     font-size: 11px; color: var(--text-muted);
@@ -221,6 +224,35 @@
     padding: 8px; border-radius: 6px; font-size: 14px;
   }
   .add-card-btn:hover { background: #d8dce2; color: var(--text); }
+  .quick-add-input {
+    border: 2px solid var(--brand); border-radius: 6px;
+    padding: 8px 10px; font-size: 14px; outline: none; width: 100%;
+  }
+  .card-main { display: flex; align-items: flex-start; gap: 8px; }
+  .card-check {
+    flex-shrink: 0;
+    width: 18px; height: 18px; margin-top: 1px;
+    border: 2px solid #c5cad1; border-radius: 50%;
+    background: #fff; cursor: pointer; padding: 0;
+    font-size: 11px; line-height: 1; color: #fff;
+  }
+  .card-check:hover { border-color: var(--green); }
+  .card-check.checked { background: var(--green); border-color: var(--green); }
+  .card-check.checked::after { content: "✓"; }
+  .task-section-h {
+    font-size: 13px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.4px;
+    margin: 18px 0 8px; padding-bottom: 4px;
+    border-bottom: 2px solid var(--border);
+  }
+  .task-section-h.late { color: var(--red); border-color: var(--red); }
+  .task-section-h.today { color: var(--brand-dark); border-color: var(--brand); }
+  .nav-search {
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 7px 14px; font-size: 13px; outline: none;
+    width: 190px; margin-left: 8px;
+  }
+  .nav-search:focus { border-color: var(--brand); width: 240px; }
   .add-list-btn {
     background: #e9ecf0aa; width: 290px; min-width: 290px;
     padding: 14px; font-weight: 600;
@@ -376,6 +408,27 @@
     white-space: nowrap;
   }
   .undo-toast button:hover { background: var(--brand-dark); }
+
+  /* ---------- Traka za novu verziju ---------- */
+  .update-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #172b4d; color: #fff;
+    padding: 10px 16px;
+    display: none;
+    align-items: center; justify-content: center; gap: 14px;
+    font-size: 14px;
+    z-index: 300;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .update-banner.show { display: flex; }
+  .update-banner button {
+    border: none; cursor: pointer;
+    background: var(--brand); color: #fff;
+    font-weight: 700; font-size: 14px;
+    padding: 7px 16px; border-radius: 6px;
+  }
+  .update-banner button:hover { background: var(--brand-dark); }
 </style>
 </head>
 <body>
@@ -384,12 +437,14 @@
 <nav>
   <span class="logo-badge">Moja<br>Firma</span>
   <span class="logo-text">Tarello</span>
+  <span id="verLabel" style="font-size:11px; color:var(--text-muted); margin-right:14px; align-self:flex-end; padding-bottom:14px;"></span>
   <button class="nav-link" data-view="ploce">Ploče</button>
   <button class="nav-link" data-view="zadaci">Moji zadaci</button>
   <button class="nav-link" data-view="kalendar">Kalendar</button>
   <button class="nav-link" data-view="pomoc">Pomoć</button>
   <button class="nav-link" data-view="admin">Admin</button>
   <button class="nav-link" data-view="qr">QR kod</button>
+  <input type="text" id="globalSearch" class="nav-search" placeholder="🔍 Pretraži kartice...">
   <span class="nav-spacer"></span>
   <span class="nav-user"><span class="avatar" id="navAvatar">?</span><span id="navName"></span></span>
 </nav>
@@ -439,7 +494,7 @@
     <h3>Kako koristiti Tarello</h3>
     <ul>
       <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu. Ikonom 📷 na pločici postavi sliku kao pozadinu ploče (ponovni klik na 📷 je uklanja).</li>
-      <li><b>Kartice</b> — klikni "+ Dodaj karticu" u listi. Klik na karticu otvara uređivanje (labela, članovi, rok, gotovo).</li>
+      <li><b>Kartice</b> — klikni "+ Dodaj karticu": upišeš naziv i pritisneš Enter — polje ostaje otvoreno za sljedeći unos (Esc zatvara). Kružić na kartici jednim klikom označava gotovo/otvoreno. Klik na karticu otvara uređivanje (labela, članovi, rok).</li>
       <li><b>Drag & drop</b> — povuci karticu mišem u drugu listu.</li>
       <li><b>Moji zadaci</b> — prikazuje sve kartice sa svih ploča. Prekidačem "Samo moji" filtriraj na kartice s tvojim inicijalima (postavi ih u Adminu).</li>
       <li><b>Kalendar</b> — kartice kojima si dodao rok prikazuju se na datumu roka (teal boja).</li>
@@ -511,6 +566,13 @@
   </div>
 </div>
 
+<!-- ============ PRETRAGA ============ -->
+<div class="view" id="view-trazi">
+  <h2>Rezultati pretrage</h2>
+  <p class="subtle" id="traziSubtle"></p>
+  <div id="searchResults" style="margin-top:14px; max-width:720px;"></div>
+</div>
+
 <!-- ============ QR KOD ============ -->
 <div class="view" id="view-qr">
   <h2>QR kod</h2>
@@ -559,6 +621,11 @@
       <button class="btn btn-primary" id="modalSave">Spremi</button>
     </div>
   </div>
+</div>
+
+<div class="update-banner" id="updateBanner">
+  <span>🔄 Dostupna je nova verzija aplikacije!</span>
+  <button id="updateBtn">Učitaj novu verziju</button>
 </div>
 
 <div class="undo-toast" id="undoToast">
@@ -707,6 +774,34 @@ function renderTrash() {
    PODACI
    ========================================================= */
 const STORAGE_KEY = "tarelloApp";
+
+/* =========================================================
+   VERZIJA APLIKACIJE + automatska provjera nove verzije
+   Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
+   ========================================================= */
+const APP_VERSION = "2.3";
+document.getElementById("verLabel").textContent = "v" + APP_VERSION;
+
+async function checkForUpdate() {
+  // radi samo na webu (http/https), ne za lokalni file://
+  if (!/^https?:/.test(location.protocol)) return;
+  try {
+    const resp = await fetch("verzija.json?t=" + Date.now(), { cache: "no-store" });
+    if (!resp.ok) return;
+    const info = await resp.json();
+    if (info.v && info.v !== APP_VERSION) {
+      document.getElementById("updateBanner").classList.add("show");
+    }
+  } catch (e) { /* offline ili nema fajla — ignoriraj */ }
+}
+
+document.getElementById("updateBtn").addEventListener("click", () => {
+  // učitaj stranicu ponovno zaobilazeći cache (jedinstveni parametar u adresi)
+  location.replace(location.pathname + "?v=" + Date.now());
+});
+
+checkForUpdate();
+setInterval(checkForUpdate, 10 * 60 * 1000); // provjeri svakih 10 minuta
 
 function id() { return Math.random().toString(36).slice(2, 10); }
 
@@ -888,7 +983,7 @@ async function initBackup() {
 /* =========================================================
    NAVIGACIJA IZMEĐU POGLEDA
    ========================================================= */
-const views = ["ploce", "kanban", "zadaci", "kalendar", "pomoc", "admin", "qr"];
+const views = ["ploce", "kanban", "zadaci", "kalendar", "pomoc", "admin", "qr", "trazi"];
 
 function showView(name) {
   views.forEach(v => document.getElementById("view-" + v).classList.toggle("active", v === name));
@@ -907,6 +1002,62 @@ document.querySelectorAll(".nav-link").forEach(btn => {
 });
 
 /* =========================================================
+   PRETRAGA — traži kartice i podsjetnike po svim pločama
+   ========================================================= */
+const searchInput = document.getElementById("globalSearch");
+
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (q.length >= 2) {
+    renderSearch(q);
+    showView("trazi");
+  } else if (document.getElementById("view-trazi").classList.contains("active")) {
+    showView("ploce");
+  }
+});
+
+function renderSearch(q) {
+  const box = document.getElementById("searchResults");
+  box.innerHTML = "";
+  let found = 0;
+
+  data.boards.forEach(b => b.lists.forEach(l => l.cards.forEach(c => {
+    if (!c.title.toLowerCase().includes(q)) return;
+    found++;
+    const row = document.createElement("div");
+    row.className = "task-row" + (c.done ? " done" : "");
+    const dot = document.createElement("span");
+    dot.className = "label-dot";
+    dot.style.background = c.label || "#dfe1e6";
+    const t = document.createElement("span");
+    t.className = "task-title"; t.textContent = c.title;
+    const where = document.createElement("span");
+    where.className = "task-where";
+    where.textContent = `${b.title} → ${l.title}` + (c.due ? ` · 📅 ${formatDate(c.due)}` : "");
+    row.append(dot, t, where);
+    row.addEventListener("click", () => { searchInput.value = ""; openBoard(b.id); });
+    box.appendChild(row);
+  })));
+
+  data.reminders.forEach(r => {
+    if (!r.text.toLowerCase().includes(q)) return;
+    found++;
+    const row = document.createElement("div");
+    row.className = "task-row";
+    const t = document.createElement("span");
+    t.className = "task-title"; t.textContent = "🔔 " + r.text;
+    const where = document.createElement("span");
+    where.className = "task-where"; where.textContent = "Podsjetnik · " + formatDate(r.date);
+    row.append(t, where);
+    row.addEventListener("click", () => { searchInput.value = ""; showView("kalendar"); });
+    box.appendChild(row);
+  });
+
+  document.getElementById("traziSubtle").textContent =
+    found ? `Pronađeno: ${found} za "${q}"` : `Ništa pronađeno za "${q}".`;
+}
+
+/* =========================================================
    PLOČE — pregled i upravljanje
    ========================================================= */
 const boardGrid = document.getElementById("boardGrid");
@@ -920,9 +1071,13 @@ function renderBoards() {
       tile.style.backgroundImage =
         `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${b.bg})`;
     }
-    const cardTotal = b.lists.reduce((s, l) => s + l.cards.length, 0);
+    const todayStr = toDateStr(new Date());
+    let open = 0, late = 0;
+    b.lists.forEach(l => l.cards.forEach(c => {
+      if (!c.done) { open++; if (c.due && c.due < todayStr) late++; }
+    }));
     tile.innerHTML = `<span>${escapeHtml(b.title)}</span>
-      <span class="tile-meta">${b.lists.length} lista · ${cardTotal} kartica</span>`;
+      <span class="tile-meta">${open} otvoreno${late ? ` · ⚠ ${late} kasni` : ""}</span>`;
 
     // gumb za sliku pozadine 📷
     const bgBtn = document.createElement("button");
@@ -1031,6 +1186,7 @@ function currentBoard() { return data.boards.find(b => b.id === currentBoardId);
    ========================================================= */
 const boardEl = document.getElementById("board");
 const boardTitleEl = document.getElementById("boardTitle");
+let quickAddListId = null; // lista u kojoj je otvoren brzi unos
 
 boardTitleEl.addEventListener("input", () => {
   const b = currentBoard(); if (!b) return;
@@ -1093,18 +1249,37 @@ function renderKanban() {
 
     list.cards.forEach(card => cardsEl.appendChild(renderCard(card, list, b)));
 
-    const addBtn = document.createElement("button");
-    addBtn.className = "add-card-btn";
-    addBtn.textContent = "+ Dodaj karticu";
-    addBtn.addEventListener("click", () => {
-      const title = prompt("Naziv kartice:");
-      if (title && title.trim()) {
-        list.cards.push({ id: id(), title: title.trim(), label: null, members: [], due: null, done: false });
-        save(); renderKanban();
-      }
-    });
+    // brzi unos kartice — polje direktno u listi, Enter dodaje
+    const addWrap = document.createElement("div");
+    if (quickAddListId === list.id) {
+      const inp = document.createElement("input");
+      inp.className = "quick-add-input";
+      inp.placeholder = "Naziv kartice… (Enter dodaje, Esc zatvara)";
+      inp.addEventListener("keydown", e => {
+        if (e.key === "Enter" && inp.value.trim()) {
+          list.cards.push({ id: id(), title: inp.value.trim(), label: null, members: [], due: null, done: false });
+          save(); renderKanban(); // polje ostaje otvoreno za sljedeći unos
+        } else if (e.key === "Escape") {
+          quickAddListId = null; renderKanban();
+        }
+      });
+      inp.addEventListener("blur", () => {
+        if (!inp.value.trim()) { quickAddListId = null; renderKanban(); }
+      });
+      addWrap.appendChild(inp);
+      setTimeout(() => inp.focus(), 0);
+    } else {
+      const addBtn = document.createElement("button");
+      addBtn.className = "add-card-btn";
+      addBtn.textContent = "+ Dodaj karticu";
+      addBtn.addEventListener("click", () => {
+        quickAddListId = list.id;
+        renderKanban();
+      });
+      addWrap.appendChild(addBtn);
+    }
 
-    listEl.append(header, cardsEl, addBtn);
+    listEl.append(header, cardsEl, addWrap);
     boardEl.appendChild(listEl);
   });
 
@@ -1133,10 +1308,25 @@ function renderCard(card, list, board) {
     el.appendChild(label);
   }
 
+  // kvačica + naslov u jednom redu
+  const main = document.createElement("div");
+  main.className = "card-main";
+
+  const chk = document.createElement("button");
+  chk.className = "card-check" + (card.done ? " checked" : "");
+  chk.title = card.done ? "Vrati u otvoreno" : "Označi kao gotovo";
+  chk.addEventListener("click", e => {
+    e.stopPropagation();
+    card.done = !card.done;
+    save(); renderKanban();
+  });
+
   const title = document.createElement("div");
   title.className = "title";
   title.textContent = card.title;
-  el.appendChild(title);
+
+  main.append(chk, title);
+  el.appendChild(main);
 
   if (card.members.length || card.due) {
     const footer = document.createElement("div");
@@ -1249,46 +1439,82 @@ function renderTasks() {
     taskFilter === "mine"
       ? (my ? `Kartice na kojima su inicijali "${my}" (promijeni u Adminu).`
             : "Postavi svoje inicijale u Adminu da vidiš svoje zadatke.")
-      : "Sve kartice sa svih ploča.";
+      : "Sve kartice sa svih ploča, grupirane po roku.";
 
   const container = document.getElementById("taskList");
   container.innerHTML = "";
-  let found = 0;
 
-  data.boards.forEach(b => {
-    b.lists.forEach(l => {
-      l.cards.forEach(c => {
-        const isMine = c.members.map(m => m.toUpperCase()).includes(my);
-        if (taskFilter === "mine" && !isMine) return;
-        found++;
-        const row = document.createElement("div");
-        row.className = "task-row" + (c.done ? " done" : "");
-        const dot = document.createElement("span");
-        dot.className = "label-dot";
-        dot.style.background = c.label || "#dfe1e6";
-        const t = document.createElement("span");
-        t.className = "task-title"; t.textContent = c.title;
-        const where = document.createElement("span");
-        where.className = "task-where";
-        where.textContent = `${b.title} → ${l.title}`
-          + (c.members.length ? ` · ${c.members.join(", ")}` : "")
-          + (c.due ? ` · 📅 ${formatDate(c.due)}` : "");
-        row.append(dot, t, where);
-        row.addEventListener("click", () => { openBoard(b.id); });
-        container.appendChild(row);
-      });
-    });
-  });
+  // skupi i filtriraj
+  const items = [];
+  data.boards.forEach(b => b.lists.forEach(l => l.cards.forEach(c => {
+    const isMine = c.members.map(m => m.toUpperCase()).includes(my);
+    if (taskFilter === "mine" && !isMine) return;
+    items.push({ b, l, c });
+  })));
 
-  if (!found) {
+  if (!items.length) {
     const p = document.createElement("p");
-    p.className = "subtle";
-    p.style.marginTop = "14px";
+    p.className = "subtle"; p.style.marginTop = "14px";
     p.textContent = taskFilter === "mine"
       ? "Nema zadataka s tvojim inicijalima. Dodaj svoje inicijale na karticu (Uredi → Članovi)."
       : "Nema kartica. Otvori ploču i dodaj prvu karticu.";
     container.appendChild(p);
+    return;
   }
+
+  // razvrstaj po roku
+  const todayStr = toDateStr(new Date());
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekEndStr = toDateStr(weekEnd);
+
+  const groups = { late: [], today: [], week: [], later: [], nodate: [], done: [] };
+  items.forEach(it => {
+    if (it.c.done) { groups.done.push(it); return; }
+    if (!it.c.due) { groups.nodate.push(it); return; }
+    if (it.c.due < todayStr) groups.late.push(it);
+    else if (it.c.due === todayStr) groups.today.push(it);
+    else if (it.c.due <= weekEndStr) groups.week.push(it);
+    else groups.later.push(it);
+  });
+
+  // sortiraj svaku grupu po roku
+  const byDue = (a, b) => (a.c.due || "9999").localeCompare(b.c.due || "9999");
+  Object.values(groups).forEach(g => g.sort(byDue));
+
+  const sections = [
+    { key: "late",   title: "⚠ Kasni",       cls: "late" },
+    { key: "today",  title: "📌 Danas",       cls: "today" },
+    { key: "week",   title: "📅 Ovaj tjedan", cls: "" },
+    { key: "later",  title: "Kasnije",        cls: "" },
+    { key: "nodate", title: "Bez roka",       cls: "" },
+    { key: "done",   title: "✓ Gotovo",       cls: "" }
+  ];
+
+  sections.forEach(s => {
+    const g = groups[s.key];
+    if (!g.length) return;
+    const h = document.createElement("div");
+    h.className = "task-section-h " + s.cls;
+    h.textContent = `${s.title} (${g.length})`;
+    container.appendChild(h);
+    g.forEach(({ b, l, c }) => {
+      const row = document.createElement("div");
+      row.className = "task-row" + (c.done ? " done" : "");
+      const dot = document.createElement("span");
+      dot.className = "label-dot";
+      dot.style.background = c.label || "#dfe1e6";
+      const t = document.createElement("span");
+      t.className = "task-title"; t.textContent = c.title;
+      const where = document.createElement("span");
+      where.className = "task-where";
+      where.textContent = `${b.title} → ${l.title}`
+        + (c.members.length ? ` · ${c.members.join(", ")}` : "")
+        + (c.due ? ` · 📅 ${formatDate(c.due)}` : "");
+      row.append(dot, t, where);
+      row.addEventListener("click", () => { openBoard(b.id); });
+      container.appendChild(row);
+    });
+  });
 }
 
 /* =========================================================
