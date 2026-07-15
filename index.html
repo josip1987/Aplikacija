@@ -460,12 +460,89 @@
   }
   .social-icons a:hover svg { fill: #fff; }
   .footer-note { font-size: 12px; color: var(--text-muted); }
+
+  /* ---------- Bočna traka (sidebar) — Veeam stil ---------- */
+  .sidebar {
+    position: fixed;
+    top: 54px; left: 0; bottom: 0;
+    width: 250px;
+    background: #1b212c;
+    overflow-y: auto;
+    padding: 12px 8px 30px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+  body.sidebar-open .view,
+  body.sidebar-open .site-footer { margin-left: 250px; }
+  @media (max-width: 760px) {
+    body.sidebar-open .view,
+    body.sidebar-open .site-footer { margin-left: 0; }
+    .sidebar { box-shadow: 4px 0 18px rgba(0,0,0,0.35); }
+  }
+  .sidebar-toggle {
+    border: none; background: none; cursor: pointer;
+    font-size: 20px; color: var(--text);
+    padding: 6px 10px; border-radius: 6px;
+  }
+  .sidebar-toggle:hover { background: var(--bg); }
+  .sb-section { margin-bottom: 2px; border-radius: 8px; }
+  .sb-section.open { background: #232a38; }
+  .sb-header {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; font-weight: 600; color: #e6e9ef;
+    padding: 11px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .sb-header:hover { background: #2a3242; }
+  .sb-icon { font-size: 16px; width: 20px; text-align: center; cursor: pointer; }
+  .sb-title { flex: 1; }
+  .sb-chevron {
+    font-size: 11px; color: #8b93a3;
+    transition: transform 0.18s ease;
+  }
+  .sb-section.open .sb-chevron { transform: rotate(180deg); }
+  .sb-del {
+    border: none; background: none; cursor: pointer;
+    color: #8b93a3; font-size: 13px; padding: 0 2px;
+    visibility: hidden;
+  }
+  .sb-header:hover .sb-del { visibility: visible; }
+  .sb-del:hover { color: #ff8a80; }
+  .sb-body { display: none; padding: 2px 6px 8px; }
+  .sb-section.open .sb-body { display: block; }
+  .sb-item {
+    font-size: 13px; color: #c7cdd8;
+    padding: 9px 12px 9px 36px;
+    border-radius: 6px;
+    cursor: pointer; line-height: 1.35;
+    word-wrap: break-word;
+  }
+  .sb-item:hover { background: #323b4d; color: #fff; }
+  .sb-add {
+    border: none; background: none; cursor: pointer;
+    color: #8b93a3; font-size: 13px; font-weight: 600;
+    padding: 8px 12px 8px 36px; border-radius: 6px; width: 100%;
+    text-align: left;
+  }
+  .sb-add:hover { background: #2a3242; color: #fff; }
+  .sb-new-section {
+    border: 2px dashed #39424f; background: none; cursor: pointer;
+    color: #8b93a3; font-size: 13px; font-weight: 600;
+    padding: 10px; border-radius: 8px; width: 100%;
+    margin-top: 10px;
+  }
+  .sb-new-section:hover { border-color: var(--brand); color: #e6e9ef; }
 </style>
 </head>
 <body>
 
 <!-- ============ NAVIGACIJA ============ -->
 <nav>
+  <button class="sidebar-toggle" id="sidebarToggle" title="Prikaži/sakrij bočnu traku">☰</button>
   <span class="logo-badge">Moja<br>Firma</span>
   <span class="logo-text">Tarello</span>
   <span id="verLabel" style="font-size:11px; color:var(--text-muted); margin-right:14px; align-self:flex-end; padding-bottom:14px;"></span>
@@ -479,6 +556,9 @@
   <span class="nav-spacer"></span>
   <span class="nav-user"><span class="avatar" id="navAvatar">?</span><span id="navName"></span></span>
 </nav>
+
+<!-- ============ BOČNA TRAKA ============ -->
+<aside class="sidebar" id="sidebar"></aside>
 
 <!-- ============ PLOČE ============ -->
 <div class="view" id="view-ploce">
@@ -524,6 +604,7 @@
   <div class="panel">
     <h3>Kako koristiti Tarello</h3>
     <ul>
+      <li><b>Bočna traka</b> — gumb ☰ (gore lijevo) otvara traku sa sekcijama za brze bilješke (Važni kontakti, Bitni ugovori...). "+ Dodaj" dodaje stavku, klik na stavku je uređuje, "+ Nova sekcija" pravi novu sekciju, klik na naziv sekcije je preimenuje.</li>
       <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu. Ikonom 📷 na pločici postavi sliku kao pozadinu ploče (ponovni klik na 📷 je uklanja).</li>
       <li><b>Kartice</b> — klikni "+ Dodaj karticu": upišeš naziv i pritisneš Enter — polje ostaje otvoreno za sljedeći unos (Esc zatvara). Kružić na kartici jednim klikom označava gotovo/otvoreno. Klik na karticu otvara uređivanje (labela, članovi, rok).</li>
       <li><b>Drag & drop</b> — povuci karticu mišem u drugu listu.</li>
@@ -816,8 +897,139 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "2.4";
+const APP_VERSION = "2.6";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
+
+/* =========================================================
+   BOČNA TRAKA — sekcije s brzim bilješkama (kontakti, ugovori...)
+   ========================================================= */
+function renderSidebar() {
+  const sb = document.getElementById("sidebar");
+  sb.innerHTML = "";
+
+  data.sidebar.forEach(sec => {
+    sec.icon ||= "📌";
+    const secEl = document.createElement("div");
+    secEl.className = "sb-section" + (sec.open ? " open" : "");
+
+    // zaglavlje: ikona + naziv + ✕ + strelica — klik sklapa/rasklapa
+    const header = document.createElement("div");
+    header.className = "sb-header";
+
+    const icon = document.createElement("span");
+    icon.className = "sb-icon";
+    icon.textContent = sec.icon;
+    icon.title = "Klikni za promjenu ikone";
+    icon.addEventListener("click", e => {
+      e.stopPropagation();
+      const nova = prompt("Ikona sekcije (zalijepi emoji, npr. 📇 📄 🔗 ☎ 🖥):", sec.icon);
+      if (nova && nova.trim()) { sec.icon = nova.trim().slice(0, 4); save(); renderSidebar(); }
+    });
+
+    const title = document.createElement("span");
+    title.className = "sb-title";
+    title.textContent = sec.title;
+    title.title = "Dupli klik za preimenovanje";
+    title.addEventListener("dblclick", e => {
+      e.stopPropagation();
+      const novi = prompt("Naziv sekcije:", sec.title);
+      if (novi && novi.trim()) { sec.title = novi.trim(); save(); renderSidebar(); }
+    });
+
+    const del = document.createElement("button");
+    del.className = "sb-del"; del.textContent = "✕"; del.title = "Obriši sekciju";
+    del.addEventListener("click", e => {
+      e.stopPropagation();
+      if (confirm(`Obrisati sekciju "${sec.title}" i sve stavke?`)) {
+        const idx = data.sidebar.findIndex(s => s.id === sec.id);
+        const backup = data.sidebar.splice(idx, 1)[0];
+        save(); renderSidebar();
+        showUndo(`Sekcija "${backup.title}" obrisana.`, () => {
+          data.sidebar.splice(idx, 0, backup);
+          save(); renderSidebar();
+        });
+      }
+    });
+
+    const chevron = document.createElement("span");
+    chevron.className = "sb-chevron";
+    chevron.textContent = "▼";
+
+    header.append(icon, title, del, chevron);
+    header.addEventListener("click", () => {
+      sec.open = !sec.open;
+      save(); renderSidebar();
+    });
+    secEl.appendChild(header);
+
+    // tijelo sekcije (vidljivo samo kad je rasklopljena)
+    const body = document.createElement("div");
+    body.className = "sb-body";
+
+    sec.items.forEach(item => {
+      const it = document.createElement("div");
+      it.className = "sb-item";
+      it.textContent = item.text;
+      it.title = "Klikni za uređivanje (obriši tekst za brisanje)";
+      it.addEventListener("click", () => {
+        const novi = prompt("Uredi stavku (obriši sav tekst pa OK za brisanje):", item.text);
+        if (novi === null) return;
+        if (novi.trim() === "") {
+          if (confirm("Obrisati ovu stavku?")) {
+            sec.items = sec.items.filter(x => x.id !== item.id);
+            save(); renderSidebar();
+          }
+        } else {
+          item.text = novi.trim();
+          save(); renderSidebar();
+        }
+      });
+      body.appendChild(it);
+    });
+
+    const add = document.createElement("button");
+    add.className = "sb-add";
+    add.textContent = "+ Dodaj";
+    add.addEventListener("click", () => {
+      const text = prompt(`Nova stavka u "${sec.title}":`);
+      if (text && text.trim()) {
+        sec.items.push({ id: id(), text: text.trim() });
+        sec.open = true;
+        save(); renderSidebar();
+      }
+    });
+    body.appendChild(add);
+
+    secEl.appendChild(body);
+    sb.appendChild(secEl);
+  });
+
+  // gumb za novu sekciju
+  const newSec = document.createElement("button");
+  newSec.className = "sb-new-section";
+  newSec.textContent = "+ Nova sekcija";
+  newSec.addEventListener("click", () => {
+    const title = prompt("Naziv nove sekcije (npr. Važni linkovi):");
+    if (title && title.trim()) {
+      data.sidebar.push({ id: id(), title: title.trim(), icon: "📌", open: true, items: [] });
+      save(); renderSidebar();
+    }
+  });
+  sb.appendChild(newSec);
+}
+
+// otvaranje/zatvaranje — stanje se pamti
+const SIDEBAR_KEY = "tarelloSidebarOpen";
+function setSidebar(open) {
+  document.body.classList.toggle("sidebar-open", open);
+  localStorage.setItem(SIDEBAR_KEY, open ? "1" : "0");
+}
+document.getElementById("sidebarToggle").addEventListener("click", () => {
+  setSidebar(!document.body.classList.contains("sidebar-open"));
+});
+// pri pokretanju: otvorena na velikim ekranima (osim ako je korisnik zatvorio)
+const savedSb = localStorage.getItem(SIDEBAR_KEY);
+setSidebar(savedSb === null ? window.innerWidth > 760 : savedSb === "1");
 
 /* =========================================================
    SOCIAL LINKOVI — OVDJE UPIŠI SVOJE ADRESE!
@@ -881,6 +1093,10 @@ const defaultData = {
   user: { name: "", initials: "" },
   reminders: [],
   trash: [],
+  sidebar: [
+    { id: "sb1", title: "Važni kontakti", icon: "📇", open: true, items: [] },
+    { id: "sb2", title: "Bitni ugovori", icon: "📄", open: false, items: [] }
+  ],
   boards: [
     {
       id: id(),
@@ -922,6 +1138,10 @@ function load() {
       const d = JSON.parse(raw);
       d.reminders ||= []; // za starije spremljene podatke bez podsjetnika
       d.trash ||= [];     // za starije spremljene podatke bez smeća
+      d.sidebar ||= [     // za starije spremljene podatke bez bočne trake
+        { id: "sb1", title: "Važni kontakti", icon: "📇", open: true, items: [] },
+        { id: "sb2", title: "Bitni ugovori", icon: "📄", open: false, items: [] }
+      ];
       return d;
     }
   } catch (e) { console.error(e); }
@@ -2065,6 +2285,7 @@ function escapeHtml(s) {
 /* start */
 updateNavUser();
 initBackup();
+renderSidebar();
 showView("ploce");
 </script>
 </body>
