@@ -715,6 +715,15 @@
     </p>
   </div>
   <div class="panel">
+    <h3>⬆ Objavi novu verziju (bez terminala!)</h3>
+    <p>Kad dobiješ nove fajlove aplikacije (index.html, verzija.json...), ovdje ih odaberi — objavljuju se direktno na GitHub. <b>Zamjena za git add/commit/push.</b> Koristi isti token kao Sinkaj.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="deployBtn">📂 Odaberi fajlove i objavi</button>
+      <input type="file" id="deployFiles" multiple style="display:none">
+    </div>
+    <p class="subtle" id="deployStatus" style="margin-top:8px;"></p>
+  </div>
+  <div class="panel">
     <h3>Podaci s weba</h3>
     <p>Učitaj ploče iz fajla <b>podaci.json</b> objavljenog uz aplikaciju (GitHub). Zamjenjuje trenutne podatke na ovom uređaju.</p>
     <div class="btn-row">
@@ -981,7 +990,7 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "2.9";
+const APP_VERSION = "3.0";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
 
 /* =========================================================
@@ -2273,6 +2282,73 @@ async function pushDataToGitHub() {
 
 document.getElementById("navSyncBtn").addEventListener("click", pushDataToGitHub);
 document.getElementById("ghPushBtn").addEventListener("click", pushDataToGitHub);
+
+/* =========================================================
+   OBJAVA NOVE VERZIJE APLIKACIJE — bez terminala!
+   Odabereš fajlove (index.html, verzija.json...) i oni idu
+   direktno na GitHub kroz API. Zamjena za git add/commit/push.
+   ========================================================= */
+const DEPLOY_EXPECTED = ["index.html", "verzija.json", "manifest.json", "ikona-192.png", "ikona-512.png", "podaci.json"];
+
+document.getElementById("deployBtn").addEventListener("click", () => {
+  if (!localStorage.getItem(GH_TOKEN_KEY)) {
+    alert("Prvo postavi GitHub token (panel iznad — GitHub sinkronizacija).");
+    return;
+  }
+  document.getElementById("deployFiles").click();
+});
+
+document.getElementById("deployFiles").addEventListener("change", async e => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+
+  // upozori na neočekivana imena (npr. "index (1).html" — česta Windows zamka!)
+  const unexpected = files.filter(f => !DEPLOY_EXPECTED.includes(f.name));
+  if (unexpected.length) {
+    if (!confirm(`⚠ Neočekivana imena: ${unexpected.map(f => f.name).join(", ")}\n(Pazi na "index (1).html" i slično!)\n\nSvejedno objaviti?`)) return;
+  }
+  if (!confirm(`Objaviti na GitHub:\n${files.map(f => "• " + f.name).join("\n")}\n\nOvo zamjenjuje postojeće fajlove na GitHubu.`)) return;
+
+  const status = document.getElementById("deployStatus");
+  const token = localStorage.getItem(GH_TOKEN_KEY);
+  const headers = { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
+
+  try {
+    for (const f of files) {
+      status.textContent = `⏳ Objavljujem ${f.name}...`;
+
+      // pročitaj fajl kao base64 (radi i za tekst i za slike)
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(",")[1]);
+        r.onerror = () => rej(new Error("ne mogu pročitati " + f.name));
+        r.readAsDataURL(f);
+      });
+
+      const api = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${encodeURIComponent(f.name)}`;
+
+      // SHA postojeće verzije (treba za zamjenu; novi fajl ga nema)
+      let sha = null;
+      const g = await fetch(`${api}?ref=${GH.branch}&t=${Date.now()}`, { headers });
+      if (g.ok) sha = (await g.json()).sha;
+
+      const body = { message: "Nova verzija: " + f.name + " ⬆ (iz aplikacije)", content: base64, branch: GH.branch };
+      if (sha) body.sha = sha;
+
+      const p = await fetch(api, { method: "PUT", headers, body: JSON.stringify(body) });
+      if (!p.ok) {
+        const err = await p.json().catch(() => ({}));
+        throw new Error(f.name + ": " + p.status + (err.message ? " — " + err.message : ""));
+      }
+    }
+    status.textContent = "✓ Objavljeno! GitHub Pages se ažurira ~1–2 min, zatim aplikacija sama ponudi novu verziju.";
+    alert("✓ Nova verzija objavljena!\nZa 1–2 minute pojavit će se traka 'Dostupna je nova verzija' — klik i gotovo.");
+  } catch (err) {
+    status.textContent = "⚠ Greška: " + err.message;
+    alert("Greška pri objavi: " + err.message + "\nProvjeri token i internet.");
+  }
+});
 
 // dohvat podataka s weba — prvo direktno iz GitHuba (svježe odmah!), pa s Pages
 async function fetchWebData() {
