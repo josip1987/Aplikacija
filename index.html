@@ -718,10 +718,13 @@
     <h3>⬆ Objavi novu verziju (bez terminala!)</h3>
     <p>Kad dobiješ nove fajlove aplikacije (index.html, verzija.json...), ovdje ih odaberi — objavljuju se direktno na GitHub. <b>Zamjena za git add/commit/push.</b> Koristi isti token kao Sinkaj.</p>
     <div class="btn-row">
-      <button class="btn btn-primary" id="deployBtn">📂 Odaberi fajlove i objavi</button>
+      <button class="btn btn-primary" id="deployDirBtn">📁 Objavi iz foldera</button>
+      <button class="btn btn-ghost" id="deployDirConnect">Poveži folder</button>
+      <button class="btn btn-ghost" id="deployBtn">📂 Ili ručno odaberi fajlove</button>
       <input type="file" id="deployFiles" multiple style="display:none">
     </div>
-    <p class="subtle" id="deployStatus" style="margin-top:8px;"></p>
+    <p class="subtle" id="deployDirStatus" style="margin-top:6px;"></p>
+    <p class="subtle" id="deployStatus" style="margin-top:4px;"></p>
   </div>
   <div class="panel">
     <h3>Podaci s weba</h3>
@@ -990,7 +993,7 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "3.0";
+const APP_VERSION = "3.1";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
 
 /* =========================================================
@@ -2191,6 +2194,7 @@ function fillAdmin() {
   document.getElementById("adminName").value = data.user.name || "";
   document.getElementById("adminInitials").value = data.user.initials || "";
   ghTokenStatus();
+  deployDirStatusRefresh();
   renderTrash();
 }
 
@@ -2289,6 +2293,134 @@ document.getElementById("ghPushBtn").addEventListener("click", pushDataToGitHub)
    direktno na GitHub kroz API. Zamjena za git add/commit/push.
    ========================================================= */
 const DEPLOY_EXPECTED = ["index.html", "verzija.json", "manifest.json", "ikona-192.png", "ikona-512.png", "podaci.json"];
+
+/* =========================================================
+   OBJAVA IZ FOLDERA — poveži Desktop\Aplikacija jednom,
+   pa jedan klik objavi najnovije fajlove iz njega na GitHub.
+   ========================================================= */
+const DEPLOY_DIR_KEY = "deployDir";
+// podaci.json NAMJERNO nije na listi — podatke šalje ⇅ Sinkaj,
+// da stari lokalni podaci ne bi pregazili svježe s GitHuba!
+const DEPLOY_FROM_DIR = ["index.html", "verzija.json", "manifest.json", "ikona-192.png", "ikona-512.png"];
+
+async function deployDirStatusRefresh() {
+  const el = document.getElementById("deployDirStatus");
+  if (!el) return;
+  if (!window.showDirectoryPicker) {
+    el.textContent = "Objava iz foldera radi u Chrome/Edge (ovaj browser ne podržava).";
+    return;
+  }
+  try {
+    const h = await idbGet(DEPLOY_DIR_KEY);
+    el.textContent = h
+      ? "📁 Povezan folder: " + h.name
+      : "Folder nije povezan — klikni 'Poveži folder' i odaberi Desktop\\Aplikacija.";
+  } catch (e) { el.textContent = ""; }
+}
+
+document.getElementById("deployDirConnect").addEventListener("click", async () => {
+  if (!window.showDirectoryPicker) {
+    alert("Objava iz foldera radi samo u Chrome ili Edge browseru.");
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker();
+    await idbSet(DEPLOY_DIR_KEY, handle);
+    deployDirStatusRefresh();
+    alert("✓ Folder povezan: " + handle.name + "\nOd sada koristi gumb '📁 Objavi iz foldera'.");
+  } catch (e) { if (e.name !== "AbortError") console.error(e); }
+});
+
+// pomoćne: ArrayBuffer → base64 i git blob SHA-1 (za preskakanje nepromijenjenih)
+function bufToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+async function gitBlobSha(buf) {
+  const header = new TextEncoder().encode("blob " + buf.byteLength + "\0");
+  const full = new Uint8Array(header.length + buf.byteLength);
+  full.set(header, 0);
+  full.set(new Uint8Array(buf), header.length);
+  const digest = await crypto.subtle.digest("SHA-1", full);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+document.getElementById("deployDirBtn").addEventListener("click", async () => {
+  const token = localStorage.getItem(GH_TOKEN_KEY);
+  if (!token) { alert("Prvo postavi GitHub token (panel iznad)."); return; }
+  if (!window.showDirectoryPicker) { alert("Radi samo u Chrome/Edge."); return; }
+
+  let dir = await idbGet(DEPLOY_DIR_KEY);
+  if (!dir) {
+    alert("Folder još nije povezan — odaberi ga sad (Desktop\\Aplikacija).");
+    try { dir = await window.showDirectoryPicker(); await idbSet(DEPLOY_DIR_KEY, dir); }
+    catch (e) { return; }
+  }
+  const perm = await dir.queryPermission({ mode: "read" });
+  if (perm !== "granted") {
+    if (await dir.requestPermission({ mode: "read" }) !== "granted") {
+      alert("Bez dozvole za čitanje foldera ne mogu nastaviti."); return;
+    }
+  }
+
+  const status = document.getElementById("deployStatus");
+  status.textContent = "⏳ Čitam folder...";
+
+  // pokupi poznate fajlove iz foldera
+  const found = [];
+  for (const name of DEPLOY_FROM_DIR) {
+    try {
+      const fh = await dir.getFileHandle(name);
+      found.push({ name, file: await fh.getFile() });
+    } catch (e) { /* fajla nema u folderu — preskoči */ }
+  }
+  if (!found.length) {
+    status.textContent = "⚠ U folderu nema nijednog očekivanog fajla.";
+    alert("U povezanom folderu nisam našao index.html ni ostale fajlove aplikacije."); return;
+  }
+  if (!confirm(`Objaviti iz foldera na GitHub:\n${found.map(f => "• " + f.name).join("\n")}\n\n(Nepromijenjeni fajlovi se automatski preskaču.)`)) {
+    status.textContent = ""; return;
+  }
+
+  const headers = { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
+  let published = 0, skipped = 0;
+  try {
+    for (const f of found) {
+      status.textContent = `⏳ ${f.name}...`;
+      const buf = await f.file.arrayBuffer();
+      const localSha = await gitBlobSha(buf);
+
+      const api = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${encodeURIComponent(f.name)}`;
+      let remoteSha = null;
+      const g = await fetch(`${api}?ref=${GH.branch}&t=${Date.now()}`, { headers });
+      if (g.ok) remoteSha = (await g.json()).sha;
+
+      if (remoteSha === localSha) { skipped++; continue; } // identičan — ne treba
+
+      const body = { message: "Nova verzija: " + f.name + " 📁 (iz foldera)", content: bufToBase64(buf), branch: GH.branch };
+      if (remoteSha) body.sha = remoteSha;
+      const p = await fetch(api, { method: "PUT", headers, body: JSON.stringify(body) });
+      if (!p.ok) {
+        const err = await p.json().catch(() => ({}));
+        throw new Error(f.name + ": " + p.status + (err.message ? " — " + err.message : ""));
+      }
+      published++;
+    }
+    status.textContent = `✓ Objavljeno: ${published} · Nepromijenjeno (preskočeno): ${skipped}`;
+    alert(published
+      ? `✓ Objavljeno ${published} fajlova!\nZa 1–2 min aplikacija će ponuditi novu verziju.`
+      : "Sve je već ažurno — folder i GitHub su identični. ✓");
+  } catch (err) {
+    status.textContent = "⚠ Greška: " + err.message;
+    alert("Greška pri objavi: " + err.message);
+  }
+});
+
+
 
 document.getElementById("deployBtn").addEventListener("click", () => {
   if (!localStorage.getItem(GH_TOKEN_KEY)) {
