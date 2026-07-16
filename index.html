@@ -559,11 +559,16 @@
   }
   .sb-header:hover .sb-del { visibility: visible; }
   .sb-del:hover { color: #ff8a80; }
-  .sb-body { display: none; padding: 2px 6px 8px; }
+  .sb-body {
+    display: none;
+    margin-left: 21px;
+    border-left: 2px solid #333d4d;
+    padding: 2px 8px 8px 10px;
+  }
   .sb-section.open .sb-body { display: block; }
   .sb-item {
     font-size: 13px; color: #c7cdd8;
-    padding: 9px 12px 9px 36px;
+    padding: 8px 10px;
     border-radius: 6px;
     cursor: pointer; line-height: 1.35;
     word-wrap: break-word;
@@ -572,7 +577,7 @@
   .sb-add {
     border: none; background: none; cursor: pointer;
     color: #8b93a3; font-size: 13px; font-weight: 600;
-    padding: 8px 12px 8px 36px; border-radius: 6px; width: 100%;
+    padding: 7px 10px; border-radius: 6px; width: 100%;
     text-align: left;
   }
   .sb-add:hover { background: #2a3242; color: #fff; }
@@ -993,7 +998,7 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "3.1";
+const APP_VERSION = "3.2";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
 
 /* =========================================================
