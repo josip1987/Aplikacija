@@ -380,6 +380,21 @@
   .done-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
   .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
+  /* ---------- Izbor ikone za link ---------- */
+  .link-picker {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .lp-item {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--bg); border: 2px solid transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 20px;
+  }
+  .lp-item svg { width: 22px; height: 22px; fill: var(--text-muted); }
+  .lp-item:hover { background: #e3e6ea; }
+  .lp-item.selected { border-color: var(--brand); background: #f3e9e9; }
+  .lp-item.selected svg { fill: var(--brand-dark); }
+
   /* ---------- Undo toast ---------- */
   .undo-toast {
     position: fixed;
@@ -796,6 +811,25 @@
   <button id="updateBtn">Učitaj novu verziju</button>
 </div>
 
+<!-- ============ MODAL (dodavanje linka na ploču) ============ -->
+<div class="modal-overlay" id="linkModalOverlay">
+  <div class="modal">
+    <h3>Dodaj link na ploču</h3>
+    <label>1. Odaberi ikonu</label>
+    <div class="link-picker" id="linkPicker"></div>
+    <div id="customEmojiRow" style="display:none;">
+      <label for="customEmojiInput">Tvoj emoji</label>
+      <input type="text" id="customEmojiInput" placeholder="npr. 📁 🖥 🔑 💾" maxlength="4" style="max-width:120px;">
+    </div>
+    <label for="linkUrlInput">2. Upiši link, email ili broj telefona</label>
+    <input type="text" id="linkUrlInput" placeholder="https://nest.com  ·  ivan@firma.hr  ·  091 123 4567">
+    <div class="modal-buttons">
+      <button class="btn btn-ghost" id="linkModalCancel">Odustani</button>
+      <button class="btn btn-primary" id="linkModalSave">Dodaj</button>
+    </div>
+  </div>
+</div>
+
 <div class="undo-toast" id="undoToast">
   <span id="undoText"></span>
   <button id="undoBtn">↩ Vrati</button>
@@ -947,7 +981,7 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "2.8";
+const APP_VERSION = "2.9";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
 
 /* =========================================================
@@ -1593,21 +1627,89 @@ function renderBoardLinks(b, container, editable) {
     add.className = "b-link-add";
     add.textContent = "+";
     add.title = "Dodaj link (Facebook, mail, telefon, bilo što...)";
-    add.addEventListener("click", () => {
-      const input = prompt("Zalijepi link, email ili broj telefona:\n(npr. https://facebook.com/..., ivan@firma.hr, 091 123 4567)");
-      if (!input || !input.trim()) return;
-      const url = normalizeLink(input);
-      let det = detectLinkType(url);
-      if (!det) {
-        const emoji = prompt("Nepoznata stranica — odaberi ikonu (zalijepi emoji, npr. 🌐 📁 🖥 📞 🔗):", "🌐");
-        det = { emoji: (emoji && emoji.trim()) ? emoji.trim().slice(0, 4) : "🌐" };
-      }
-      b.links.push({ id: id(), url, ...det });
-      save(); renderKanban();
-    });
+    add.addEventListener("click", () => openLinkModal(b));
     container.appendChild(add);
   }
 }
+
+/* ---------- Modal za dodavanje linka s izborom ikone ---------- */
+const LINK_CHOICES = [
+  { key: "facebook",  svg: true },
+  { key: "instagram", svg: true },
+  { key: "linkedin",  svg: true },
+  { key: "github",    svg: true },
+  { key: "email",     svg: true },
+  { key: "phone",     emoji: "☎" },
+  { key: "web",       emoji: "🌐" },
+  { key: "custom",    emoji: "✏️" }
+];
+let linkModalBoard = null;
+let selectedLinkChoice = null;
+
+(function buildLinkPicker() {
+  const picker = document.getElementById("linkPicker");
+  LINK_CHOICES.forEach(ch => {
+    const el = document.createElement("div");
+    el.className = "lp-item";
+    el.dataset.key = ch.key;
+    el.title = ch.key === "custom" ? "Vlastiti emoji" : ch.key;
+    if (ch.svg) el.innerHTML = SOCIAL_ICONS[ch.key].svg;
+    else el.textContent = ch.emoji;
+    el.addEventListener("click", () => {
+      picker.querySelectorAll(".lp-item").forEach(x => x.classList.remove("selected"));
+      el.classList.add("selected");
+      selectedLinkChoice = ch;
+      document.getElementById("customEmojiRow").style.display =
+        ch.key === "custom" ? "block" : "none";
+    });
+    picker.appendChild(el);
+  });
+})();
+
+function openLinkModal(board) {
+  linkModalBoard = board;
+  selectedLinkChoice = null;
+  document.getElementById("linkUrlInput").value = "";
+  document.getElementById("customEmojiInput").value = "";
+  document.getElementById("customEmojiRow").style.display = "none";
+  document.querySelectorAll("#linkPicker .lp-item").forEach(x => x.classList.remove("selected"));
+  document.getElementById("linkModalOverlay").classList.add("open");
+}
+
+function closeLinkModal() {
+  document.getElementById("linkModalOverlay").classList.remove("open");
+  linkModalBoard = null;
+}
+
+document.getElementById("linkModalCancel").addEventListener("click", closeLinkModal);
+document.getElementById("linkModalOverlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("linkModalOverlay")) closeLinkModal();
+});
+
+document.getElementById("linkModalSave").addEventListener("click", () => {
+  if (!linkModalBoard) return;
+  if (!selectedLinkChoice) { alert("Odaberi ikonu (korak 1)."); return; }
+  const rawUrl = document.getElementById("linkUrlInput").value.trim();
+  if (!rawUrl) { alert("Upiši link (korak 2)."); return; }
+
+  const url = normalizeLink(rawUrl);
+  const link = { id: id(), url };
+
+  if (selectedLinkChoice.svg) {
+    link.type = selectedLinkChoice.key;
+  } else if (selectedLinkChoice.key === "custom") {
+    const em = document.getElementById("customEmojiInput").value.trim();
+    link.emoji = em ? em.slice(0, 4) : "🔗";
+  } else {
+    link.emoji = selectedLinkChoice.emoji;
+  }
+
+  linkModalBoard.links ||= [];
+  linkModalBoard.links.push(link);
+  save();
+  closeLinkModal();
+  renderKanban();
+});
 
 /* =========================================================
    KANBAN
