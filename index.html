@@ -461,6 +461,38 @@
   .social-icons a:hover svg { fill: #fff; }
   .footer-note { font-size: 12px; color: var(--text-muted); }
 
+  /* ---------- Ikone linkova na ploči ---------- */
+  .board-links { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .b-link {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #fff; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    font-size: 15px; text-decoration: none;
+  }
+  .b-link svg { width: 15px; height: 15px; fill: var(--brand-dark); }
+  .b-link:hover { background: var(--brand); border-color: var(--brand); }
+  .b-link:hover svg { fill: #fff; }
+  .b-link .bl-del {
+    position: absolute; top: -7px; right: -7px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--red); color: #fff;
+    font-size: 10px; line-height: 16px; text-align: center;
+    display: none; cursor: pointer;
+  }
+  .b-link:hover .bl-del { display: block; }
+  @media (hover: none) { .b-link .bl-del { display: block; } }
+  .b-link-add {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: none; border: 2px dashed var(--border);
+    color: var(--text-muted); font-size: 16px; line-height: 1;
+    cursor: pointer;
+  }
+  .b-link-add:hover { border-color: var(--brand); color: var(--brand-dark); }
+  .tile-links { margin-top: 8px; }
+  .tile-links .b-link { width: 24px; height: 24px; }
+  .tile-links .b-link svg { width: 12px; height: 12px; }
+
   /* ---------- Bočna traka (sidebar) — Veeam stil ---------- */
   .sidebar {
     position: fixed;
@@ -552,6 +584,7 @@
   <button class="nav-link" data-view="pomoc">Pomoć</button>
   <button class="nav-link" data-view="admin">Admin</button>
   <button class="nav-link" data-view="qr">QR kod</button>
+  <button class="nav-link" id="navSyncBtn" title="Pošalji podatke na GitHub">⇅ Sinkaj</button>
   <input type="text" id="globalSearch" class="nav-search" placeholder="🔍 Pretraži kartice...">
   <span class="nav-spacer"></span>
   <span class="nav-user"><span class="avatar" id="navAvatar">?</span><span id="navName"></span></span>
@@ -572,6 +605,7 @@
   <div class="board-header-row">
     <button class="back-btn" id="backToBoards">← Ploče</button>
     <input id="boardTitle" title="Klikni za promjenu naziva ploče">
+    <div class="board-links" id="boardLinks"></div>
   </div>
   <div class="board" id="board"></div>
 </div>
@@ -606,6 +640,7 @@
     <ul>
       <li><b>Bočna traka</b> — gumb ☰ (gore lijevo) otvara traku sa sekcijama za brze bilješke (Važni kontakti, Bitni ugovori...). "+ Dodaj" dodaje stavku, klik na stavku je uređuje, "+ Nova sekcija" pravi novu sekciju, klik na naziv sekcije je preimenuje.</li>
       <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu. Ikonom 📷 na pločici postavi sliku kao pozadinu ploče (ponovni klik na 📷 je uklanja).</li>
+      <li><b>Linkovi na ploči</b> — u otvorenoj ploči, pored naziva, gumb <b>+</b> dodaje link (Facebook, Instagram, mail, telefon, bilo koja stranica). Aplikacija sama prepozna poznate servise i stavi ikonu; za ostale biraš emoji. Klik na ikonu otvara link, ✕ na ikoni je uklanja.</li>
       <li><b>Kartice</b> — klikni "+ Dodaj karticu": upišeš naziv i pritisneš Enter — polje ostaje otvoreno za sljedeći unos (Esc zatvara). Kružić na kartici jednim klikom označava gotovo/otvoreno. Klik na karticu otvara uređivanje (labela, članovi, rok).</li>
       <li><b>Drag & drop</b> — povuci karticu mišem u drugu listu.</li>
       <li><b>Moji zadaci</b> — prikazuje sve kartice sa svih ploča. Prekidačem "Samo moji" filtriraj na kartice s tvojim inicijalima (postavi ih u Adminu).</li>
@@ -648,6 +683,21 @@
       <button class="btn btn-primary" id="excelBtn">📊 Export u Excel (.xlsx)</button>
       <button class="btn btn-primary" id="pdfBtn">📄 Export u PDF</button>
     </div>
+  </div>
+  <div class="panel">
+    <h3>⇅ GitHub sinkronizacija</h3>
+    <p>Gumb "Sinkaj" šalje podatke direktno na GitHub jednim klikom. Za to treba GitHub token (upute ispod) — sprema se <b>samo na ovom uređaju</b>, nikad u javni kod.</p>
+    <label for="ghTokenInput">GitHub token</label>
+    <input type="password" id="ghTokenInput" placeholder="github_pat_..." style="max-width:100%;">
+    <p class="subtle" id="ghTokenStatus" style="margin-top:6px;"></p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="ghTokenSave">Spremi token</button>
+      <button class="btn btn-ghost" id="ghTokenClear">Ukloni token</button>
+      <button class="btn btn-primary" id="ghPushBtn">⬆ Pošalji podatke na GitHub</button>
+    </div>
+    <p class="subtle" style="margin-top:12px; line-height:1.6;">
+      <b>Kako napraviti token (jednom):</b> GitHub → klik na svoju sliku → Settings → skroz dolje <b>Developer settings</b> → <b>Personal access tokens → Fine-grained tokens</b> → Generate new token → Repository access: <b>Only select repositories → Aplikacija</b> → Permissions → <b>Contents: Read and write</b> → Generate → kopiraj token (počinje s github_pat_) i zalijepi gore.
+    </p>
   </div>
   <div class="panel">
     <h3>Podaci s weba</h3>
@@ -897,7 +947,7 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "2.6";
+const APP_VERSION = "2.8";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
 
 /* =========================================================
@@ -1371,6 +1421,14 @@ function renderBoards() {
     tile.innerHTML = `<span>${escapeHtml(b.title)}</span>
       <span class="tile-meta">${open} otvoreno${late ? ` · ⚠ ${late} kasni` : ""}</span>`;
 
+    // mini ikone linkova na pločici
+    if (b.links && b.links.length) {
+      const linksRow = document.createElement("div");
+      linksRow.className = "board-links tile-links";
+      renderBoardLinks(b, linksRow, false);
+      tile.appendChild(linksRow);
+    }
+
     // gumb za sliku pozadine 📷
     const bgBtn = document.createElement("button");
     bgBtn.className = "tile-bg-btn"; bgBtn.textContent = "📷";
@@ -1474,6 +1532,84 @@ document.getElementById("backToBoards").addEventListener("click", () => showView
 function currentBoard() { return data.boards.find(b => b.id === currentBoardId); }
 
 /* =========================================================
+   IKONE LINKOVA NA PLOČI (Facebook, mail, telefon, custom...)
+   ========================================================= */
+function detectLinkType(url) {
+  const u = url.toLowerCase();
+  if (u.includes("facebook.com")) return { type: "facebook" };
+  if (u.includes("instagram.com")) return { type: "instagram" };
+  if (u.includes("linkedin.com")) return { type: "linkedin" };
+  if (u.includes("github.com")) return { type: "github" };
+  if (u.startsWith("mailto:")) return { type: "email" };
+  if (u.startsWith("tel:")) return { emoji: "☎" };
+  return null; // nepoznato → korisnik bira emoji
+}
+
+function normalizeLink(input) {
+  let url = input.trim();
+  if (/^[\w.+-]+@[\w.-]+\.\w+$/.test(url)) return "mailto:" + url;      // čisti email
+  if (/^[+\d][\d\s\/-]{5,}$/.test(url)) return "tel:" + url.replace(/[\s\/-]/g, ""); // broj telefona
+  if (!/^(https?:|mailto:|tel:)/i.test(url)) return "https://" + url;   // dodaj https://
+  return url;
+}
+
+function renderBoardLinks(b, container, editable) {
+  container.innerHTML = "";
+  b.links ||= [];
+
+  b.links.forEach(link => {
+    const a = document.createElement("a");
+    a.className = "b-link";
+    a.href = link.url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.title = link.url;
+    if (link.type && SOCIAL_ICONS[link.type]) {
+      a.innerHTML = SOCIAL_ICONS[link.type].svg;
+    } else {
+      a.textContent = link.emoji || "🌐";
+    }
+    a.addEventListener("click", e => e.stopPropagation());
+
+    if (editable) {
+      const del = document.createElement("span");
+      del.className = "bl-del";
+      del.textContent = "✕";
+      del.title = "Ukloni link";
+      del.addEventListener("click", e => {
+        e.preventDefault(); e.stopPropagation();
+        if (confirm("Ukloniti ovaj link s ploče?")) {
+          b.links = b.links.filter(x => x.id !== link.id);
+          save(); renderKanban();
+        }
+      });
+      a.appendChild(del);
+    }
+    container.appendChild(a);
+  });
+
+  if (editable) {
+    const add = document.createElement("button");
+    add.className = "b-link-add";
+    add.textContent = "+";
+    add.title = "Dodaj link (Facebook, mail, telefon, bilo što...)";
+    add.addEventListener("click", () => {
+      const input = prompt("Zalijepi link, email ili broj telefona:\n(npr. https://facebook.com/..., ivan@firma.hr, 091 123 4567)");
+      if (!input || !input.trim()) return;
+      const url = normalizeLink(input);
+      let det = detectLinkType(url);
+      if (!det) {
+        const emoji = prompt("Nepoznata stranica — odaberi ikonu (zalijepi emoji, npr. 🌐 📁 🖥 📞 🔗):", "🌐");
+        det = { emoji: (emoji && emoji.trim()) ? emoji.trim().slice(0, 4) : "🌐" };
+      }
+      b.links.push({ id: id(), url, ...det });
+      save(); renderKanban();
+    });
+    container.appendChild(add);
+  }
+}
+
+/* =========================================================
    KANBAN
    ========================================================= */
 const boardEl = document.getElementById("board");
@@ -1488,6 +1624,7 @@ boardTitleEl.addEventListener("input", () => {
 function renderKanban() {
   const b = currentBoard(); if (!b) return;
   boardTitleEl.value = b.title;
+  renderBoardLinks(b, document.getElementById("boardLinks"), true);
   boardEl.innerHTML = "";
 
   b.lists.forEach(list => {
@@ -1942,6 +2079,7 @@ function formatDate(iso) {
 function fillAdmin() {
   document.getElementById("adminName").value = data.user.name || "";
   document.getElementById("adminInitials").value = data.user.initials || "";
+  ghTokenStatus();
   renderTrash();
 }
 
@@ -1962,21 +2100,109 @@ document.getElementById("adminSave").addEventListener("click", () => {
 document.getElementById("backupConnect").addEventListener("click", connectBackup);
 document.getElementById("backupDisconnect").addEventListener("click", disconnectBackup);
 
+/* =========================================================
+   GITHUB SINKRONIZACIJA — slanje podataka jednim klikom
+   Token se čuva SAMO u ovom browseru (localStorage), ne u kodu.
+   ========================================================= */
+const GH = { owner: "josip1987", repo: "Aplikacija", path: "podaci.json", branch: "main" };
+const GH_TOKEN_KEY = "tarelloGhToken";
+
+function ghTokenStatus() {
+  const el = document.getElementById("ghTokenStatus");
+  el.textContent = localStorage.getItem(GH_TOKEN_KEY)
+    ? "✓ Token je spremljen na ovom uređaju."
+    : "Token nije postavljen — gumb Sinkaj neće raditi dok ga ne spremiš.";
+}
+
+document.getElementById("ghTokenSave").addEventListener("click", () => {
+  const t = document.getElementById("ghTokenInput").value.trim();
+  if (!t) { alert("Zalijepi token u polje."); return; }
+  localStorage.setItem(GH_TOKEN_KEY, t);
+  document.getElementById("ghTokenInput").value = "";
+  ghTokenStatus();
+  alert("Token spremljen ✓ Sad možeš koristiti gumb ⇅ Sinkaj.");
+});
+
+document.getElementById("ghTokenClear").addEventListener("click", () => {
+  localStorage.removeItem(GH_TOKEN_KEY);
+  ghTokenStatus();
+});
+
+async function pushDataToGitHub() {
+  const token = localStorage.getItem(GH_TOKEN_KEY);
+  if (!token) {
+    alert("Prvo postavi GitHub token: Admin → GitHub sinkronizacija (upute su tamo).");
+    showView("admin");
+    return;
+  }
+  const btn = document.getElementById("navSyncBtn");
+  const oldText = btn.textContent;
+  btn.textContent = "⏳ Šaljem...";
+  btn.disabled = true;
+  try {
+    const api = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+    const headers = {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json"
+    };
+    // dohvati SHA postojećeg fajla (GitHub ga traži za izmjenu)
+    let sha = null;
+    const getResp = await fetch(`${api}?ref=${GH.branch}&t=${Date.now()}`, { headers });
+    if (getResp.ok) sha = (await getResp.json()).sha;
+
+    // pošalji nove podatke (base64, s podrškom za č ć š ž đ)
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const body = { message: "Sink podataka iz aplikacije ⇅", content, branch: GH.branch };
+    if (sha) body.sha = sha;
+
+    const putResp = await fetch(api, { method: "PUT", headers, body: JSON.stringify(body) });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      throw new Error(putResp.status + (err.message ? " — " + err.message : ""));
+    }
+    alert("✓ Podaci poslani na GitHub!\nNa drugom uređaju: Admin → Učitaj podatke s weba.");
+  } catch (e) {
+    alert("Greška pri slanju: " + e.message + "\nProvjeri token (Admin) i internet vezu.");
+  } finally {
+    btn.textContent = oldText;
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("navSyncBtn").addEventListener("click", pushDataToGitHub);
+document.getElementById("ghPushBtn").addEventListener("click", pushDataToGitHub);
+
+// dohvat podataka s weba — prvo direktno iz GitHuba (svježe odmah!), pa s Pages
+async function fetchWebData() {
+  const urls = [
+    `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${GH.path}?t=${Date.now()}`,
+    "podaci.json?t=" + Date.now()
+  ];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, { cache: "no-store" });
+      if (r.ok) return await r.json();
+    } catch (e) { /* probaj sljedeći izvor */ }
+  }
+  throw new Error("nedostupno");
+}
+
 document.getElementById("loadWebBtn").addEventListener("click", async () => {
   if (!confirm("Učitati podatke s weba? Ovo ZAMJENJUJE sve trenutne podatke na ovom uređaju.")) return;
   try {
-    const resp = await fetch("podaci.json", { cache: "no-store" });
-    if (!resp.ok) throw new Error("nema fajla");
-    const seed = await resp.json();
+    const seed = await fetchWebData();
     if (!seed.boards) throw new Error("neispravan format");
     seed.reminders ||= [];
+    seed.trash ||= [];
+    seed.sidebar ||= [];
     data = seed;
     save();
     updateNavUser();
+    renderSidebar();
     alert("Podaci učitani s weba ✓");
     showView("ploce");
   } catch (e) {
-    alert("Ne mogu učitati podaci.json — provjeri da je fajl objavljen uz aplikaciju i da imaš internet.\n(Napomena: ne radi kad je aplikacija otvorena lokalno kao file://)");
+    alert("Ne mogu učitati podatke — provjeri internet vezu.\n(Napomena: ne radi kad je aplikacija otvorena lokalno kao file://)");
   }
 });
 
