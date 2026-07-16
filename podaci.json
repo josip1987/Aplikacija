@@ -116,5 +116,25 @@
       "at": 1783858785431
     }
   ],
-  "sidebar": []
+  "sidebar": [
+    {
+      "id": "d97e13t5",
+      "title": "Zračna Luka Split",
+      "icon": "📌",
+      "open": true,
+      "items": [
+        {
+          "id": "bzmcfus3",
+          "text": "Test"
+        }
+      ]
+    },
+    {
+      "id": "32zga57h",
+      "title": "Eronet",
+      "icon": "📌",
+      "open": true,
+      "items": []
+    }
+  ]
 }
