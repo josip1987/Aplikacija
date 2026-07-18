@@ -90,6 +90,11 @@
       "id": "g4xpvqxg",
       "date": "2026-07-08",
       "text": "test"
+    },
+    {
+      "id": "1vwm6t1t",
+      "date": "2026-07-09",
+      "text": "wefwer"
     }
   ],
   "trash": [
@@ -124,14 +129,41 @@
       "open": true,
       "items": [
         {
-          "id": "bzmcfus3",
-          "text": "Test"
+          "id": "mzspprfn",
+          "text": "Mrežni uređaji"
+        },
+        {
+          "id": "ncuwm06z",
+          "text": "test2"
+        },
+        {
+          "id": "ltefv7kd",
+          "text": "test3"
         }
       ]
     },
     {
       "id": "32zga57h",
       "title": "Eronet",
+      "icon": "📌",
+      "open": true,
+      "items": []
+    },
+    {
+      "id": "6xfy6y4q",
+      "title": "Test1",
+      "icon": "📌",
+      "open": true,
+      "items": [
+        {
+          "id": "h3zgfgdt",
+          "text": "Test1"
+        }
+      ]
+    },
+    {
+      "id": "eonbtxnm",
+      "title": "Ugovori",
       "icon": "📌",
       "open": true,
       "items": []
