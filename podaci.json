@@ -78,6 +78,27 @@
           "cards": []
         }
       ]
+    },
+    {
+      "id": "h8nhp1kl",
+      "title": "Test_sink",
+      "lists": [
+        {
+          "id": "gvgyzn3l",
+          "title": "Za napraviti",
+          "cards": []
+        },
+        {
+          "id": "ulfit44q",
+          "title": "U tijeku",
+          "cards": []
+        },
+        {
+          "id": "ahtu9jly",
+          "title": "Gotovo",
+          "cards": []
+        }
+      ]
     }
   ],
   "reminders": [
