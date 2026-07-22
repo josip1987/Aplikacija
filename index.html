@@ -148,12 +148,12 @@
     padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 600;
   }
   .back-btn:hover { background: #d8dce2; }
-  #boardTitle {
+  #boardTitle, #sbTableTitle {
     font-size: 22px; font-weight: 700;
     border: none; background: transparent; color: var(--text);
     outline: none; min-width: 200px; max-width: 55vw;
   }
-  #boardTitle:focus { background: #fff; border-radius: 4px; box-shadow: 0 0 0 2px var(--brand); }
+  #boardTitle:focus, #sbTableTitle:focus { background: #fff; border-radius: 4px; box-shadow: 0 0 0 2px var(--brand); }
 
   .board {
     display: flex; gap: 14px;
@@ -508,6 +508,62 @@
   .tile-links .b-link { width: 24px; height: 24px; }
   .tile-links .b-link svg { width: 12px; height: 12px; }
 
+  /* ---------- Mini tablica (Excel stil) ---------- */
+  .sbtable-toolbar { display: flex; gap: 10px; margin-bottom: 14px; }
+  .sbtable-wrap { overflow-x: auto; padding-bottom: 20px; }
+  table.sbtable {
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(9,30,66,0.12);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table.sbtable th, table.sbtable td {
+    border: 1px solid var(--border);
+    padding: 0;
+    min-width: 140px;
+  }
+  table.sbtable th {
+    background: #e9ecf0;
+    position: relative;
+    padding: 0;
+  }
+  .sbth-inner {
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 10px;
+  }
+  .sbth-input {
+    border: none; background: transparent; outline: none;
+    font-weight: 700; font-size: 13px; color: var(--text);
+    width: 100%; min-width: 0;
+  }
+  .sb-col-del {
+    border: none; background: none; cursor: pointer;
+    color: var(--text-muted); font-size: 13px; flex-shrink: 0;
+    visibility: hidden; padding: 0 2px;
+  }
+  table.sbtable th:hover .sb-col-del { visibility: visible; }
+  .sb-col-del:hover { color: var(--red); }
+  .sbtd-cell {
+    border: none; outline: none; background: transparent;
+    font-size: 13px; color: var(--text);
+    padding: 8px 10px; width: 100%; display: block;
+    min-height: 1.4em;
+  }
+  .sbtd-cell:focus { background: #f3e9e9; }
+  .sb-row-num {
+    background: #f7f8fa; color: var(--text-muted); font-size: 12px;
+    text-align: center; width: 34px; min-width: 34px; position: relative;
+  }
+  .sb-row-del {
+    border: none; background: none; cursor: pointer;
+    color: var(--text-muted); font-size: 12px;
+    visibility: hidden; width: 100%; padding: 8px 0;
+  }
+  tr:hover .sb-row-del { visibility: visible; }
+  .sb-row-del:hover { color: var(--red); }
+  .sbtable-empty { color: var(--text-muted); font-size: 13px; padding: 10px 2px; }
+
   /* ---------- Bočna traka (sidebar) — Veeam stil ---------- */
   .sidebar {
     position: fixed;
@@ -630,6 +686,22 @@
   <div class="board" id="board"></div>
 </div>
 
+<!-- ============ MINI TABLICA (stranica iz bočne trake) ============ -->
+<div class="view" id="view-sbtable">
+  <div class="board-header-row">
+    <button class="back-btn" id="backFromSbTable">← Natrag</button>
+    <input id="sbTableTitle" title="Klikni za promjenu naziva stranice">
+  </div>
+  <div class="sbtable-toolbar">
+    <button class="btn btn-ghost" id="sbAddRow">+ Dodaj red</button>
+    <button class="btn btn-ghost" id="sbAddCol">+ Dodaj stupac</button>
+    <button class="btn btn-danger" id="sbDeletePage">🗑 Obriši stranicu</button>
+  </div>
+  <div class="sbtable-wrap">
+    <table class="sbtable" id="sbTable"></table>
+  </div>
+</div>
+
 <!-- ============ MOJI ZADACI ============ -->
 <div class="view" id="view-zadaci">
   <h2>Moji zadaci</h2>
@@ -658,7 +730,7 @@
   <div class="panel">
     <h3>Kako koristiti Tarello</h3>
     <ul>
-      <li><b>Bočna traka</b> — gumb ☰ (gore lijevo) otvara traku sa sekcijama za brze bilješke (Važni kontakti, Bitni ugovori...). "+ Dodaj" dodaje stavku, klik na stavku je uređuje, "+ Nova sekcija" pravi novu sekciju, klik na naziv sekcije je preimenuje.</li>
+      <li><b>Bočna traka</b> — gumb ☰ (gore lijevo) otvara traku sa sekcijama (Mrežni uređaji, Bitni ugovori...). "+ Dodaj" pravi novu stranicu — klik na nju otvara <b>mini Excel tablicu</b> gdje dodaješ/brišeš retke i stupce, uređuješ nazive stupaca i ćelije. Klik na naziv sekcije (u zaglavlju) je preimenuje, ✕ je briše. "Ploče" (kanban s karticama) ostaje odvojeno — vidiš ih samo klikom na "Ploče" u gornjoj navigaciji.</li>
       <li><b>Ploče</b> — pregled svih tvojih ploča. Klik otvara ploču, "+ Nova ploča" pravi novu. Ikonom 📷 na pločici postavi sliku kao pozadinu ploče (ponovni klik na 📷 je uklanja).</li>
       <li><b>Linkovi na ploči</b> — u otvorenoj ploči, pored naziva, gumb <b>+</b> dodaje link (Facebook, Instagram, mail, telefon, bilo koja stranica). Aplikacija sama prepozna poznate servise i stavi ikonu; za ostale biraš emoji. Klik na ikonu otvara link, ✕ na ikoni je uklanja.</li>
       <li><b>Kartice</b> — klikni "+ Dodaj karticu": upišeš naziv i pritisneš Enter — polje ostaje otvoreno za sljedeći unos (Esc zatvara). Kružić na kartici jednim klikom označava gotovo/otvoreno. Klik na karticu otvara uređivanje (labela, članovi, rok).</li>
@@ -998,7 +1070,7 @@ const STORAGE_KEY = "tarelloApp";
    VERZIJA APLIKACIJE + automatska provjera nove verzije
    Kod svake promjene koda povećaj broj OVDJE i u verzija.json!
    ========================================================= */
-const APP_VERSION = "3.3";
+const APP_VERSION = "3.4";
 document.getElementById("verLabel").textContent = "v" + APP_VERSION;
 
 /* =========================================================
@@ -1068,23 +1140,12 @@ function renderSidebar() {
     body.className = "sb-body";
 
     sec.items.forEach(item => {
+      migrateSidebarItem(item);
       const it = document.createElement("div");
       it.className = "sb-item";
-      it.textContent = item.text;
-      it.title = "Klikni za uređivanje (obriši tekst za brisanje)";
-      it.addEventListener("click", () => {
-        const novi = prompt("Uredi stavku (obriši sav tekst pa OK za brisanje):", item.text);
-        if (novi === null) return;
-        if (novi.trim() === "") {
-          if (confirm("Obrisati ovu stavku?")) {
-            sec.items = sec.items.filter(x => x.id !== item.id);
-            save(); renderSidebar();
-          }
-        } else {
-          item.text = novi.trim();
-          save(); renderSidebar();
-        }
-      });
+      it.textContent = item.title;
+      it.title = "Klikni za otvaranje stranice";
+      it.addEventListener("click", () => openSidebarTable(sec, item));
       body.appendChild(it);
     });
 
@@ -1092,11 +1153,13 @@ function renderSidebar() {
     add.className = "sb-add";
     add.textContent = "+ Dodaj";
     add.addEventListener("click", () => {
-      const text = prompt(`Nova stavka u "${sec.title}":`);
-      if (text && text.trim()) {
-        sec.items.push({ id: id(), text: text.trim() });
+      const title = prompt(`Naziv nove stranice u "${sec.title}" (npr. Mrežni uređaji):`);
+      if (title && title.trim()) {
+        const item = { id: id(), title: title.trim(), table: emptySbTable() };
+        sec.items.push(item);
         sec.open = true;
         save(); renderSidebar();
+        openSidebarTable(sec, item);
       }
     });
     body.appendChild(add);
@@ -1131,6 +1194,149 @@ document.getElementById("sidebarToggle").addEventListener("click", () => {
 // pri pokretanju: otvorena na velikim ekranima (osim ako je korisnik zatvorio)
 const savedSb = localStorage.getItem(SIDEBAR_KEY);
 setSidebar(savedSb === null ? window.innerWidth > 760 : savedSb === "1");
+
+/* =========================================================
+   MINI TABLICA — stranice iz bočne trake (npr. "Mrežni uređaji")
+   Svaka stavka sidebara je sad mini Excel-nalik tablica.
+   ========================================================= */
+function emptySbTable() {
+  return { cols: ["Stupac 1", "Stupac 2", "Stupac 3"], rows: [["", "", ""], ["", "", ""]] };
+}
+
+// stariji podaci imali su samo { id, text } — pretvori u tablicu
+function migrateSidebarItem(item) {
+  if (!item.table) {
+    const oldText = item.text || "";
+    item.title = item.title || oldText || "Bez naziva";
+    item.table = { cols: ["Stavka"], rows: oldText ? [[oldText]] : [[""]] };
+    delete item.text;
+  }
+  item.title ||= "Bez naziva";
+}
+
+let sbCurrentSection = null;
+let sbCurrentItem = null;
+
+function openSidebarTable(sec, item) {
+  migrateSidebarItem(item);
+  sbCurrentSection = sec;
+  sbCurrentItem = item;
+  showView("sbtable");
+  renderSbTable();
+}
+
+document.getElementById("backFromSbTable").addEventListener("click", () => showView("ploce"));
+
+const sbTableTitleEl = document.getElementById("sbTableTitle");
+sbTableTitleEl.addEventListener("input", () => {
+  if (!sbCurrentItem) return;
+  sbCurrentItem.title = sbTableTitleEl.value;
+  save(); renderSidebar();
+});
+
+document.getElementById("sbAddRow").addEventListener("click", () => {
+  if (!sbCurrentItem) return;
+  const cols = sbCurrentItem.table.cols.length || 1;
+  sbCurrentItem.table.rows.push(new Array(cols).fill(""));
+  save(); renderSbTable();
+});
+
+document.getElementById("sbAddCol").addEventListener("click", () => {
+  if (!sbCurrentItem) return;
+  const t = sbCurrentItem.table;
+  t.cols.push("Stupac " + (t.cols.length + 1));
+  t.rows.forEach(r => r.push(""));
+  save(); renderSbTable();
+});
+
+document.getElementById("sbDeletePage").addEventListener("click", () => {
+  if (!sbCurrentItem || !sbCurrentSection) return;
+  const sec = sbCurrentSection, item = sbCurrentItem;
+  if (!confirm(`Obrisati stranicu "${item.title}"?`)) return;
+  const idx = sec.items.findIndex(x => x.id === item.id);
+  const backup = sec.items.splice(idx, 1)[0];
+  save(); renderSidebar();
+  showView("ploce");
+  showUndo(`Stranica "${backup.title}" obrisana.`, () => {
+    sec.items.splice(idx, 0, backup);
+    save(); renderSidebar();
+  });
+});
+
+function renderSbTable() {
+  if (!sbCurrentItem) return;
+  const item = sbCurrentItem;
+  sbTableTitleEl.value = item.title;
+  const t = item.table;
+  const tableEl = document.getElementById("sbTable");
+  tableEl.innerHTML = "";
+
+  // zaglavlje stupaca
+  const thead = document.createElement("tr");
+  thead.appendChild(document.createElement("th")); // prazna ćelija iznad brojeva redaka
+  t.cols.forEach((colName, ci) => {
+    const th = document.createElement("th");
+    const inner = document.createElement("div");
+    inner.className = "sbth-inner";
+    const inp = document.createElement("input");
+    inp.className = "sbth-input";
+    inp.value = colName;
+    inp.addEventListener("input", () => { t.cols[ci] = inp.value; save(); });
+    const del = document.createElement("button");
+    del.className = "sb-col-del"; del.textContent = "✕"; del.title = "Obriši stupac";
+    del.addEventListener("click", () => {
+      if (t.cols.length <= 1) { alert("Mora ostati barem jedan stupac."); return; }
+      if (!confirm(`Obrisati stupac "${t.cols[ci]}"?`)) return;
+      t.cols.splice(ci, 1);
+      t.rows.forEach(r => r.splice(ci, 1));
+      save(); renderSbTable();
+    });
+    inner.append(inp, del);
+    th.appendChild(inner);
+    thead.appendChild(th);
+  });
+  tableEl.appendChild(thead);
+
+  // retci
+  t.rows.forEach((row, ri) => {
+    const tr = document.createElement("tr");
+    const numTd = document.createElement("td");
+    numTd.className = "sb-row-num";
+    const rowDel = document.createElement("button");
+    rowDel.className = "sb-row-del";
+    rowDel.textContent = "✕";
+    rowDel.title = "Obriši redak";
+    rowDel.addEventListener("click", () => {
+      if (t.rows.length <= 1) { alert("Mora ostati barem jedan redak."); return; }
+      t.rows.splice(ri, 1);
+      save(); renderSbTable();
+    });
+    numTd.appendChild(rowDel);
+    tr.appendChild(numTd);
+
+    row.forEach((val, ci) => {
+      const td = document.createElement("td");
+      const cell = document.createElement("div");
+      cell.className = "sbtd-cell";
+      cell.contentEditable = "true";
+      cell.textContent = val;
+      cell.addEventListener("input", () => { row[ci] = cell.textContent; save(); });
+      cell.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); cell.blur(); }
+      });
+      td.appendChild(cell);
+      tr.appendChild(td);
+    });
+    tableEl.appendChild(tr);
+  });
+
+  if (!t.rows.length) {
+    const p = document.createElement("p");
+    p.className = "sbtable-empty";
+    p.textContent = "Nema redaka — klikni '+ Dodaj red'.";
+    tableEl.parentElement.appendChild(p);
+  }
+}
 
 /* =========================================================
    SOCIAL LINKOVI — OVDJE UPIŠI SVOJE ADRESE!
@@ -1376,7 +1582,7 @@ async function initBackup() {
 /* =========================================================
    NAVIGACIJA IZMEĐU POGLEDA
    ========================================================= */
-const views = ["ploce", "kanban", "zadaci", "kalendar", "pomoc", "admin", "qr", "trazi"];
+const views = ["ploce", "kanban", "zadaci", "kalendar", "pomoc", "admin", "qr", "trazi", "sbtable"];
 
 function showView(name) {
   views.forEach(v => document.getElementById("view-" + v).classList.toggle("active", v === name));
